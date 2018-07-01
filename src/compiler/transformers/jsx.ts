@@ -45,6 +45,11 @@ namespace ts {
                 case SyntaxKind.JsxExpression:
                     return visitJsxExpression(<JsxExpression>node);
 
+                case SyntaxKind.MethodDeclaration:
+                case SyntaxKind.GetAccessor:
+                    return visitMethodDeclaration(<MethodDeclaration | GetAccessorDeclaration>node);
+                    //return visitMethodDeclaration(<MethodDeclaration>node);
+
                 default:
                     return visitEachChild(node, visitor, context);
             }
@@ -86,38 +91,14 @@ namespace ts {
 
         function visitJsxOpeningLikeElement(node: JsxOpeningLikeElement, children: readonly JsxChild[] | undefined, isChild: boolean, location: TextRange) {
             const tagName = getTagName(node);
-            let objectProperties: Expression | undefined;
             const attrs = node.attributes.properties;
-            if (attrs.length === 0) {
-                // When there are no attributes, React wants "null"
-                objectProperties = createNull();
-            }
-            else {
-                // Map spans of JsxAttribute nodes into object literals and spans
-                // of JsxSpreadAttribute nodes into expressions.
-                const segments = flatten<Expression | ObjectLiteralExpression>(
-                    spanMap(attrs, isJsxSpreadAttribute, (attrs, isSpread) => isSpread
-                        ? map(attrs, transformJsxSpreadAttributeToExpression)
-                        : createObjectLiteral(map(attrs, transformJsxAttributeToObjectLiteralElement))
-                    )
-                );
-
-                if (isJsxSpreadAttribute(attrs[0])) {
-                    // We must always emit at least one object literal before a spread
-                    // argument.
-                    segments.unshift(createObjectLiteral());
-                }
-
-                // Either emit one big object literal (no spread attribs), or
-                // a call to the __assign helper.
-                objectProperties = singleOrUndefined(segments);
-                if (!objectProperties) {
-                    objectProperties = createAssignHelper(context, segments);
-                }
-            }
+            const objectProperties = compilerOptions.jsx === JsxEmit.Vue
+                ? createVueProperties(tagName, attrs)
+                : createReactProperties(attrs);
 
             const element = createExpressionForJsxElement(
                 context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
+                compilerOptions.jsx!,
                 compilerOptions.reactNamespace!, // TODO: GH#18217
                 tagName,
                 objectProperties,
@@ -133,9 +114,157 @@ namespace ts {
             return element;
         }
 
+        function visitMethodDeclaration(node: MethodDeclaration | GetAccessorDeclaration) {
+            const visited = visitEachChild(node, visitor, context);
+            if (compilerOptions.jsx !== JsxEmit.Vue || !visited.body) {
+                return visited;
+            }
+            const arg = visited.parameters[0];
+            if (arg && isIdentifier(arg.name) && idText(arg.name) === (compilerOptions.reactNamespace || "h")) {
+                return visited;
+            }
+            if (findAncestor(node, isJsxExpression)) {
+                return visited;
+            }
+
+            const renderDefinition = createVueRenderComponentDefinition(compilerOptions.reactNamespace!, visited);
+            return { ...visited, body: createBlock([renderDefinition, ...visited.body.statements]) };
+        }
+
+        function createVueProperties(tagName: Expression, attrs: NodeArray<JsxAttributeLike>) {
+            // When there are no attributes, Vue doesn't want anything
+            if (attrs.length === 0) {
+                return undefined;
+            }
+            // Map spans of JsxAttribute nodes into object literals and spans
+            // of JsxSpreadAttribute nodes into expressions.
+            const segments = flatten<Expression | ObjectLiteralExpression>(spanMap(attrs, isJsxSpreadAttribute, (attrs, isSpread) => isSpread
+                ? map(attrs, transformJsxSpreadAttributeToExpression)
+                : transformVueAttributesToExpression(tagName, <JsxAttribute[]>attrs)));
+
+            // Either emit one big object literal (no spread attribs), or
+            // a call to the __vueJsxMergeProps helper.
+            return singleOrUndefined(segments) ?? createVueMergePropsHelper(context, segments);
+        }
+
+        function transformVueAttributesToExpression(tagName: Expression, attrs: readonly JsxAttribute[]) {
+            const tagText = isStringLiteral(tagName) ? tagName.text : undefined;
+
+            const groupedAttrs = arrayToMultiMap(attrs, attr => getVuePropertyKind(attr, tagText));
+            return createObjectLiteral(arrayFrom(groupedAttrs.entries(), ([propKind, values]) => {
+                return createVuePropertyAssignment(values, propKind);
+            }), /*multiLine*/ true);
+        }
+
+        function getVuePropertyKind(attr: JsxAttribute, tag: string | undefined) {
+            const name = idText(attr.name);
+            if (["class", "staticClass", "style", "key", "ref", "refInFor", "slot", "scopedSlots"].indexOf(name) > -1) {
+                return name;
+            }
+            else if (name.indexOf("v-") === 0) {
+                return "directives";
+            }
+
+            const nestedAttr = name.match(/^(props|domProps|on|nativeOn|hook)[\-_A-Z]/);
+            if (nestedAttr) {
+                return nestedAttr[1];
+            }
+
+            const isDomProp =
+                (name === "value" && tag !== undefined && ["input", "textarea", "option", "select"].indexOf(tag) > -1 ||
+                name === "selected" && tag === "option" ||
+                name === "checked" && tag === "input" ||
+                name === "muted" && tag === "video") &&
+                isJsxAttribute(attr) && attr.initializer && isJsxExpression(attr.initializer);
+            if (isDomProp) {
+                return "domProps";
+            }
+
+            return "attrs";
+        }
+
+        function createVuePropertyAssignment(attrs: JsxAttribute[], key: string) {
+            if (["class", "staticClass", "style", "key", "ref", "refInFor", "slot", "scopedSlots"].indexOf(key) > -1) {
+                return transformJsxAttributeToObjectLiteralElement(attrs[0]);
+            }
+            else if (key === "directives") {
+                return createPropertyAssignment(key, createArrayLiteral(map(attrs, createVueDirectiveObjectLiteral), /*multiLine*/ true));
+            }
+            else {
+                return createPropertyAssignment(key, createObjectLiteral(map(attrs, transformVueAttributeToObjectLiteralElement), /*multiLine*/ true));
+            }
+        }
+
+        function createVueDirectiveObjectLiteral(attr: JsxAttribute) {
+            const name = idText(attr.name).substr(2); // drop "v-"
+            return createObjectLiteral([
+                createPropertyAssignment("name", createStringLiteral(name)),
+                createPropertyAssignment("value", transformJsxAttributeInitializer(attr.initializer))
+            ]);
+        }
+
+        function transformVueAttributeToObjectLiteralElement(attr: JsxAttribute) {
+            let name = idText(attr.name);
+            const nestedAttr = name.match(/^(?:props|domProps|on|nativeOn|hook)([\-_A-Z])/);
+            if (nestedAttr) {
+                const [fullMatch, firstChar] = nestedAttr;
+                name = (firstChar === "-" ? "" : firstChar.toLowerCase()) + name.slice(fullMatch.length);
+            }
+
+            const xlinkAttr = name.match(/^xlink([A-Z])/);
+            if (xlinkAttr) {
+                const [fullMatch, firstChar] = xlinkAttr;
+                name = JSON.stringify("xlink:" + firstChar.toLowerCase() + name.slice(fullMatch.length));
+            }
+
+            const propName = name.indexOf("-") > -1 ? createStringLiteral(name) : name;
+            const expression = transformJsxAttributeInitializer(attr.initializer);
+            return createPropertyAssignment(propName, expression);
+        }
+
+        function createVueMergePropsHelper(context: TransformationContext, attributesSegments: Expression[]) {
+            context.requestEmitHelper(vueJsxMergePropsHelper);
+            return createCall(
+                getUnscopedHelperName("__vueJsxMergeProps"),
+                /*typeArguments*/ undefined,
+                [createArrayLiteral(attributesSegments)]
+            );
+        }
+
+        function createReactProperties(attrs: NodeArray<JsxAttributeLike>) {
+            if (attrs.length === 0) {
+                // When there are no attributes, React wants "null"
+                return createNull();
+            }
+            let objectProperties: Expression | undefined;
+            // Map spans of JsxAttribute nodes into object literals and spans
+            // of JsxSpreadAttribute nodes into expressions.
+            const segments = flatten<Expression | ObjectLiteralExpression>(
+                spanMap(attrs, isJsxSpreadAttribute, (attrs, isSpread) => isSpread
+                    ? map(attrs, transformJsxSpreadAttributeToExpression)
+                    : createObjectLiteral(map(attrs, transformJsxAttributeToObjectLiteralElement))
+                )
+            );
+
+            if (isJsxSpreadAttribute(attrs[0])) {
+                // We must always emit at least one object literal before a spread
+                // argument.
+                segments.unshift(createObjectLiteral());
+            }
+
+            // Either emit one big object literal (no spread attribs), or
+            // a call to the __assign helper.
+            objectProperties = singleOrUndefined(segments);
+            if (!objectProperties) {
+                objectProperties = createAssignHelper(context, segments);
+            }
+            return objectProperties;
+        }
+
         function visitJsxOpeningFragment(node: JsxOpeningFragment, children: readonly JsxChild[], isChild: boolean, location: TextRange) {
             const element = createExpressionForJsxFragment(
                 context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
+                compilerOptions.jsx!,
                 compilerOptions.reactNamespace!, // TODO: GH#18217
                 mapDefined(children, transformJsxChildToExpression),
                 node,
@@ -563,4 +692,67 @@ namespace ts {
         hearts: 0x2665,
         diams: 0x2666
     });
+
+    const vueJsxMergePropsHelper: UnscopedEmitHelper = {
+        name: "vue:jsxMergePropsHelper",
+        importName: "__vueJsxMergeProps",
+        scoped: false,
+        priority: 1,
+        text: `
+            var __vueJsxMergeProps = (function () {
+                var nestRE = /^(attrs|props|on|nativeOn|class|style|hook)$/;
+                return function (objs) {
+                    return objs.reduce(function (a, b) {
+                        var aa, bb, key, nestedKey, temp;
+                        for (key in b) {
+                            aa = a[key];
+                            bb = b[key];
+                            if (aa && nestRE.test(key)) {
+                                // normalize class
+                                if (key === 'class') {
+                                    if (typeof aa === 'string') {
+                                        temp = aa;
+                                        a[key] = aa = {};
+                                        aa[temp] = true;
+                                    }
+                                    if (typeof bb === 'string') {
+                                        temp = bb;
+                                        b[key] = bb = {};
+                                        bb[temp] = true;
+                                    }
+                                }
+                                if (key === 'on' || key === 'nativeOn' || key === 'hook') {
+                                    // merge functions
+                                    for (nestedKey in bb) {
+                                        aa[nestedKey] = mergeFn(aa[nestedKey], bb[nestedKey]);
+                                    }
+                                }
+                                else if (Array.isArray(aa)) {
+                                    a[key] = aa.concat(bb);
+                                }
+                                else if (Array.isArray(bb)) {
+                                    a[key] = [aa].concat(bb);
+                                }
+                                else {
+                                    for (nestedKey in bb) {
+                                        aa[nestedKey] = bb[nestedKey];
+                                    }
+                                }
+                            }
+                            else {
+                                a[key] = b[key];
+                            }
+                        }
+                        return a
+                    }, {});
+                };
+
+                function mergeFn(a, b) {
+                    return function () {
+                        a && a.apply(this, arguments)
+                        b && b.apply(this, arguments)
+                    }
+                }
+            })();`
+    };
 }

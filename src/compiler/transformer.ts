@@ -47,7 +47,7 @@ namespace ts {
         transformers.push(transformTypeScript);
         transformers.push(transformClassFields);
 
-        if (jsx === JsxEmit.React) {
+        if (jsx === JsxEmit.React || jsx === JsxEmit.Vue) {
             transformers.push(transformJsx);
         }
 
