@@ -1,0 +1,2070 @@
+=== tests/cases/compiler/jsxVue.tsx ===
+describe('babel-plugin-transform-vue-jsx', () => {
+>describe('babel-plugin-transform-vue-jsx', () => {  it('should contain text', () => {    const vnode = render(h => <div>test</div>);    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  });  it('should bind text', () => {    const text = 'foo';    const vnode = render(h => <div>{text}</div>);    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('foo');  });  it('should extract attrs', () => {    const vnode = render(h => <div id="hi" dir="ltr"></div>);    expect(vnode.data.attrs.id).to.equal('hi');    expect(vnode.data.attrs.dir).to.equal('ltr');  });  it('should bind attr', () => {    const id = 'foo';    const vnode = render(h => <div id={id}></div>);    expect(vnode.data.attrs.id).to.equal('foo');  });  it('should omit attribs if possible', () => {    const vnode = render(h => <div>test</div>);    expect(vnode.data).to.equal(undefined);  });  it('should omit children argument if possible', () => {    const vnode = render(h => <div />);    const children = vnode.children;    expect(children).to.equal(undefined);  });  it('should handle top-level special attrs', () => {    const vnode = render(h => (      <div        class="foo"        style="bar"        key="key"        ref="ref"        refInFor        slot="slot">      </div>    ));    expect(vnode.data.class).to.equal('foo');    expect(vnode.data.style).to.equal('bar');    expect(vnode.data.key).to.equal('key');    expect(vnode.data.ref).to.equal('ref');    expect(vnode.data.refInFor).to.be.true;    expect(vnode.data.slot).to.equal('slot');  })  it('should handle nested properties', () => {    const noop = _ => _;    const vnode = render(h => (      <div        props-on-success={noop}        on-click={noop}        on-kebab-case={noop}        domProps-innerHTML="<p>hi</p>"        hook-insert={noop}>      </div>    ));    expect(vnode.data.props['on-success']).to.equal(noop);    expect(vnode.data.on.click).to.equal(noop);    expect(vnode.data.on['kebab-case']).to.equal(noop);    expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>');    expect(vnode.data.hook.insert).to.equal(noop);  })  it('should handle nested properties (camelCase)', () => {    const noop = _ => _;    const vnode = render(h => (      <div        propsOnSuccess={noop}        onClick={noop}        onCamelCase={noop}        domPropsInnerHTML="<p>hi</p>"        hookInsert={noop}>      </div>    ));    expect(vnode.data.props.onSuccess).to.equal(noop);    expect(vnode.data.on.click).to.equal(noop);    expect(vnode.data.on.camelCase).to.equal(noop);    expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>');    expect(vnode.data.hook.insert).to.equal(noop);  });  it('should support data attributes', () => {    const vnode = render(h => (      <div data-id="1"></div>    ));    expect(vnode.data.attrs['data-id']).to.equal('1');  });  it('should handle identifier tag name as components', () => {    const Test = {};    const vnode = render(h => <Test/>);    expect(vnode.tag).to.contain('vue-component');  });  it('should work for components with children', () => {    const Test = {};    const vnode = render(h => <Test><div>hi</div></Test>);    const children = vnode.componentOptions.children;    expect(children[0].tag).to.equal('div');  });  it('should bind things in thunk with correct this context', () => {    const Test = {      render (h) {        return <div>{this.$slots.default}</div>      }    };    const context = { test: 'foo' };    const vnode = render((function (h) {      return <Test>{this.test}</Test>    }).bind(context));    const vm = createComponentInstanceForVnode(vnode);    const childVnode = vm._render();    expect(childVnode.tag).to.equal('div');    expect(childVnode.children[0].text).to.equal('foo');  });  it('spread (single object expression)', () => {    const props = {      innerHTML: 2    };    const vnode = render(h => (      <div {...{ props }}/>    ));    expect(vnode.data.props.innerHTML).to.equal(2);  })  it('spread (mixed)', () => {    const calls = [];    const data = {      attrs: {        id: 'hehe'      },      on: {        click: function () {          calls.push(1);        }      },      props: {        innerHTML: 2      },      hook: {        insert: function () {          calls.push(3);        }      },      class: ['a', 'b']    };    const vnode = render(h => (      <div href="huhu"        {...data}        class={{ c: true }}        on-click={() => calls.push(2)}        hook-insert={() => calls.push(4)} />    ));    expect(vnode.data.attrs.id).to.equal('hehe');    expect(vnode.data.attrs.href).to.equal('huhu');    expect(vnode.data.props.innerHTML).to.equal(2);    expect(vnode.data.class).to.deep.equal(['a', 'b', { c: true }]);    // merge handlers properly for on    vnode.data.on.click();    expect(calls).to.deep.equal([1, 2]);    // merge hooks properly    vnode.data.hook.insert();    expect(calls).to.deep.equal([1, 2, 3, 4]);  });  it('custom directives', () => {    const vnode = render(h => (      <div v-test={ 123 } v-other={ 234 } />    ));    expect(vnode.data.directives.length).to.equal(2);    expect(vnode.data.directives[0]).to.deep.equal({ name: 'test', value: 123 });    expect(vnode.data.directives[1]).to.deep.equal({ name: 'other', value: 234 });  })  it('xlink:href', () => {    const vnode = render(h => (      <use xlinkHref={'#name'}></use>    ));    expect(vnode.data.attrs['xlink:href']).to.equal('#name');  })  it('merge class', () => {    const vnode = render(h => (      <div class="a" {...{ class: 'b' }}/>    ));    expect(vnode.data.class).to.deep.equal({ a: true, b: true });  })  it('h injection in object methods', () => {    const obj = {      method () {        return <div>test</div>;      }    };    const vnode = render(h => obj.method.call({ $createElement: h }));    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  })  it('h should not be injected in nested JSX expressions', () => {    const obj = {      method () {        return <div foo={{          render () {            return <div>bar</div>;          }        }}>test</div>;      }    };    const vnode = render(h => obj.method.call({ $createElement: h }));    expect(vnode.tag).to.equal('div');    const nested = vnode.data.attrs.foo.render();    expect(nested.tag).to.equal('div');    expect(nested.children[0].text).to.equal('bar');  });  it('h injection in object getters', () => {    const obj: any = {      get computed () {        return <div>test</div>;      }    };    const vnode = render(h => {      obj.$createElement = h;      return obj.computed;    });    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  });  it('h injection in multi-level object getters', () => {    const obj: any = {      inherited: {        get computed () {          return <div>test</div>;        }      }    };    const vnode = render(h => {      obj.inherited.$createElement = h;      return obj.inherited.computed;    });    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  });  it('h injection in class methods', () => {    class Test {      $createElement: any;      constructor (h) {        this.$createElement = h;      }      render () {        return <div>test</div>;      }    };    const vnode = render(h => (new Test(h)).render(h));    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  });  it('h injection in class getters', () => {    class Test {      $createElement: any;      constructor (h) {        this.$createElement = h;      }      get computed () {        return <div>test</div>;      }    };    const vnode = render(h => (new Test(h)).computed);    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  });  it('h injection in methods with parameters', () => {    class Test {      $createElement: any;      constructor (h) {        this.$createElement = h;      }      notRender (notH) {        return <div>{notH}</div>;      }    };    const vnode = render(h => (new Test(h)).notRender('test'));    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  });  it('should handle special attrs properties', () => {    const vnode = render(h => (      <input value="value" />    ));    expect(vnode.data.attrs.value).to.equal('value');  });  it('should handle special domProps properties', () => {    const vnode = render(h => (      <input value={'some jsx expression'} />    ));    expect(vnode.data.domProps.value).to.equal('some jsx expression');  });}) : void
+>describe : (key: string, callback: () => void) => void
+>'babel-plugin-transform-vue-jsx' : "babel-plugin-transform-vue-jsx"
+>() => {  it('should contain text', () => {    const vnode = render(h => <div>test</div>);    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  });  it('should bind text', () => {    const text = 'foo';    const vnode = render(h => <div>{text}</div>);    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('foo');  });  it('should extract attrs', () => {    const vnode = render(h => <div id="hi" dir="ltr"></div>);    expect(vnode.data.attrs.id).to.equal('hi');    expect(vnode.data.attrs.dir).to.equal('ltr');  });  it('should bind attr', () => {    const id = 'foo';    const vnode = render(h => <div id={id}></div>);    expect(vnode.data.attrs.id).to.equal('foo');  });  it('should omit attribs if possible', () => {    const vnode = render(h => <div>test</div>);    expect(vnode.data).to.equal(undefined);  });  it('should omit children argument if possible', () => {    const vnode = render(h => <div />);    const children = vnode.children;    expect(children).to.equal(undefined);  });  it('should handle top-level special attrs', () => {    const vnode = render(h => (      <div        class="foo"        style="bar"        key="key"        ref="ref"        refInFor        slot="slot">      </div>    ));    expect(vnode.data.class).to.equal('foo');    expect(vnode.data.style).to.equal('bar');    expect(vnode.data.key).to.equal('key');    expect(vnode.data.ref).to.equal('ref');    expect(vnode.data.refInFor).to.be.true;    expect(vnode.data.slot).to.equal('slot');  })  it('should handle nested properties', () => {    const noop = _ => _;    const vnode = render(h => (      <div        props-on-success={noop}        on-click={noop}        on-kebab-case={noop}        domProps-innerHTML="<p>hi</p>"        hook-insert={noop}>      </div>    ));    expect(vnode.data.props['on-success']).to.equal(noop);    expect(vnode.data.on.click).to.equal(noop);    expect(vnode.data.on['kebab-case']).to.equal(noop);    expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>');    expect(vnode.data.hook.insert).to.equal(noop);  })  it('should handle nested properties (camelCase)', () => {    const noop = _ => _;    const vnode = render(h => (      <div        propsOnSuccess={noop}        onClick={noop}        onCamelCase={noop}        domPropsInnerHTML="<p>hi</p>"        hookInsert={noop}>      </div>    ));    expect(vnode.data.props.onSuccess).to.equal(noop);    expect(vnode.data.on.click).to.equal(noop);    expect(vnode.data.on.camelCase).to.equal(noop);    expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>');    expect(vnode.data.hook.insert).to.equal(noop);  });  it('should support data attributes', () => {    const vnode = render(h => (      <div data-id="1"></div>    ));    expect(vnode.data.attrs['data-id']).to.equal('1');  });  it('should handle identifier tag name as components', () => {    const Test = {};    const vnode = render(h => <Test/>);    expect(vnode.tag).to.contain('vue-component');  });  it('should work for components with children', () => {    const Test = {};    const vnode = render(h => <Test><div>hi</div></Test>);    const children = vnode.componentOptions.children;    expect(children[0].tag).to.equal('div');  });  it('should bind things in thunk with correct this context', () => {    const Test = {      render (h) {        return <div>{this.$slots.default}</div>      }    };    const context = { test: 'foo' };    const vnode = render((function (h) {      return <Test>{this.test}</Test>    }).bind(context));    const vm = createComponentInstanceForVnode(vnode);    const childVnode = vm._render();    expect(childVnode.tag).to.equal('div');    expect(childVnode.children[0].text).to.equal('foo');  });  it('spread (single object expression)', () => {    const props = {      innerHTML: 2    };    const vnode = render(h => (      <div {...{ props }}/>    ));    expect(vnode.data.props.innerHTML).to.equal(2);  })  it('spread (mixed)', () => {    const calls = [];    const data = {      attrs: {        id: 'hehe'      },      on: {        click: function () {          calls.push(1);        }      },      props: {        innerHTML: 2      },      hook: {        insert: function () {          calls.push(3);        }      },      class: ['a', 'b']    };    const vnode = render(h => (      <div href="huhu"        {...data}        class={{ c: true }}        on-click={() => calls.push(2)}        hook-insert={() => calls.push(4)} />    ));    expect(vnode.data.attrs.id).to.equal('hehe');    expect(vnode.data.attrs.href).to.equal('huhu');    expect(vnode.data.props.innerHTML).to.equal(2);    expect(vnode.data.class).to.deep.equal(['a', 'b', { c: true }]);    // merge handlers properly for on    vnode.data.on.click();    expect(calls).to.deep.equal([1, 2]);    // merge hooks properly    vnode.data.hook.insert();    expect(calls).to.deep.equal([1, 2, 3, 4]);  });  it('custom directives', () => {    const vnode = render(h => (      <div v-test={ 123 } v-other={ 234 } />    ));    expect(vnode.data.directives.length).to.equal(2);    expect(vnode.data.directives[0]).to.deep.equal({ name: 'test', value: 123 });    expect(vnode.data.directives[1]).to.deep.equal({ name: 'other', value: 234 });  })  it('xlink:href', () => {    const vnode = render(h => (      <use xlinkHref={'#name'}></use>    ));    expect(vnode.data.attrs['xlink:href']).to.equal('#name');  })  it('merge class', () => {    const vnode = render(h => (      <div class="a" {...{ class: 'b' }}/>    ));    expect(vnode.data.class).to.deep.equal({ a: true, b: true });  })  it('h injection in object methods', () => {    const obj = {      method () {        return <div>test</div>;      }    };    const vnode = render(h => obj.method.call({ $createElement: h }));    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  })  it('h should not be injected in nested JSX expressions', () => {    const obj = {      method () {        return <div foo={{          render () {            return <div>bar</div>;          }        }}>test</div>;      }    };    const vnode = render(h => obj.method.call({ $createElement: h }));    expect(vnode.tag).to.equal('div');    const nested = vnode.data.attrs.foo.render();    expect(nested.tag).to.equal('div');    expect(nested.children[0].text).to.equal('bar');  });  it('h injection in object getters', () => {    const obj: any = {      get computed () {        return <div>test</div>;      }    };    const vnode = render(h => {      obj.$createElement = h;      return obj.computed;    });    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  });  it('h injection in multi-level object getters', () => {    const obj: any = {      inherited: {        get computed () {          return <div>test</div>;        }      }    };    const vnode = render(h => {      obj.inherited.$createElement = h;      return obj.inherited.computed;    });    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  });  it('h injection in class methods', () => {    class Test {      $createElement: any;      constructor (h) {        this.$createElement = h;      }      render () {        return <div>test</div>;      }    };    const vnode = render(h => (new Test(h)).render(h));    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  });  it('h injection in class getters', () => {    class Test {      $createElement: any;      constructor (h) {        this.$createElement = h;      }      get computed () {        return <div>test</div>;      }    };    const vnode = render(h => (new Test(h)).computed);    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  });  it('h injection in methods with parameters', () => {    class Test {      $createElement: any;      constructor (h) {        this.$createElement = h;      }      notRender (notH) {        return <div>{notH}</div>;      }    };    const vnode = render(h => (new Test(h)).notRender('test'));    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  });  it('should handle special attrs properties', () => {    const vnode = render(h => (      <input value="value" />    ));    expect(vnode.data.attrs.value).to.equal('value');  });  it('should handle special domProps properties', () => {    const vnode = render(h => (      <input value={'some jsx expression'} />    ));    expect(vnode.data.domProps.value).to.equal('some jsx expression');  });} : () => void
+
+  it('should contain text', () => {
+>it('should contain text', () => {    const vnode = render(h => <div>test</div>);    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  }) : void
+>it : (name: string, callback: () => void) => void
+>'should contain text' : "should contain text"
+>() => {    const vnode = render(h => <div>test</div>);    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  } : () => void
+
+    const vnode = render(h => <div>test</div>);
+>vnode : any
+>render(h => <div>test</div>) : any
+>render : (render: any) => any
+>h => <div>test</div> : (h: any) => any
+>h : any
+><div>test</div> : any
+>div : any
+>div : any
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal('div') : void
+>expect(vnode.tag).to.equal : (value: any) => void
+>expect(vnode.tag).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.tag) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.tag : any
+>vnode : any
+>tag : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'div' : "div"
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal('test') : void
+>expect(vnode.children[0].text).to.equal : (value: any) => void
+>expect(vnode.children[0].text).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.children[0].text) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.children[0].text : any
+>vnode.children[0] : any
+>vnode.children : any
+>vnode : any
+>children : any
+>0 : 0
+>text : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'test' : "test"
+
+  });
+
+  it('should bind text', () => {
+>it('should bind text', () => {    const text = 'foo';    const vnode = render(h => <div>{text}</div>);    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('foo');  }) : void
+>it : (name: string, callback: () => void) => void
+>'should bind text' : "should bind text"
+>() => {    const text = 'foo';    const vnode = render(h => <div>{text}</div>);    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('foo');  } : () => void
+
+    const text = 'foo';
+>text : "foo"
+>'foo' : "foo"
+
+    const vnode = render(h => <div>{text}</div>);
+>vnode : any
+>render(h => <div>{text}</div>) : any
+>render : (render: any) => any
+>h => <div>{text}</div> : (h: any) => any
+>h : any
+><div>{text}</div> : any
+>div : any
+>text : "foo"
+>div : any
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal('div') : void
+>expect(vnode.tag).to.equal : (value: any) => void
+>expect(vnode.tag).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.tag) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.tag : any
+>vnode : any
+>tag : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'div' : "div"
+
+    expect(vnode.children[0].text).to.equal('foo');
+>expect(vnode.children[0].text).to.equal('foo') : void
+>expect(vnode.children[0].text).to.equal : (value: any) => void
+>expect(vnode.children[0].text).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.children[0].text) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.children[0].text : any
+>vnode.children[0] : any
+>vnode.children : any
+>vnode : any
+>children : any
+>0 : 0
+>text : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'foo' : "foo"
+
+  });
+
+  it('should extract attrs', () => {
+>it('should extract attrs', () => {    const vnode = render(h => <div id="hi" dir="ltr"></div>);    expect(vnode.data.attrs.id).to.equal('hi');    expect(vnode.data.attrs.dir).to.equal('ltr');  }) : void
+>it : (name: string, callback: () => void) => void
+>'should extract attrs' : "should extract attrs"
+>() => {    const vnode = render(h => <div id="hi" dir="ltr"></div>);    expect(vnode.data.attrs.id).to.equal('hi');    expect(vnode.data.attrs.dir).to.equal('ltr');  } : () => void
+
+    const vnode = render(h => <div id="hi" dir="ltr"></div>);
+>vnode : any
+>render(h => <div id="hi" dir="ltr"></div>) : any
+>render : (render: any) => any
+>h => <div id="hi" dir="ltr"></div> : (h: any) => any
+>h : any
+><div id="hi" dir="ltr"></div> : any
+>div : any
+>id : string
+>dir : string
+>div : any
+
+    expect(vnode.data.attrs.id).to.equal('hi');
+>expect(vnode.data.attrs.id).to.equal('hi') : void
+>expect(vnode.data.attrs.id).to.equal : (value: any) => void
+>expect(vnode.data.attrs.id).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.attrs.id) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.attrs.id : any
+>vnode.data.attrs : any
+>vnode.data : any
+>vnode : any
+>data : any
+>attrs : any
+>id : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'hi' : "hi"
+
+    expect(vnode.data.attrs.dir).to.equal('ltr');
+>expect(vnode.data.attrs.dir).to.equal('ltr') : void
+>expect(vnode.data.attrs.dir).to.equal : (value: any) => void
+>expect(vnode.data.attrs.dir).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.attrs.dir) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.attrs.dir : any
+>vnode.data.attrs : any
+>vnode.data : any
+>vnode : any
+>data : any
+>attrs : any
+>dir : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'ltr' : "ltr"
+
+  });
+
+  it('should bind attr', () => {
+>it('should bind attr', () => {    const id = 'foo';    const vnode = render(h => <div id={id}></div>);    expect(vnode.data.attrs.id).to.equal('foo');  }) : void
+>it : (name: string, callback: () => void) => void
+>'should bind attr' : "should bind attr"
+>() => {    const id = 'foo';    const vnode = render(h => <div id={id}></div>);    expect(vnode.data.attrs.id).to.equal('foo');  } : () => void
+
+    const id = 'foo';
+>id : "foo"
+>'foo' : "foo"
+
+    const vnode = render(h => <div id={id}></div>);
+>vnode : any
+>render(h => <div id={id}></div>) : any
+>render : (render: any) => any
+>h => <div id={id}></div> : (h: any) => any
+>h : any
+><div id={id}></div> : any
+>div : any
+>id : string
+>id : "foo"
+>div : any
+
+    expect(vnode.data.attrs.id).to.equal('foo');
+>expect(vnode.data.attrs.id).to.equal('foo') : void
+>expect(vnode.data.attrs.id).to.equal : (value: any) => void
+>expect(vnode.data.attrs.id).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.attrs.id) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.attrs.id : any
+>vnode.data.attrs : any
+>vnode.data : any
+>vnode : any
+>data : any
+>attrs : any
+>id : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'foo' : "foo"
+
+  });
+
+  it('should omit attribs if possible', () => {
+>it('should omit attribs if possible', () => {    const vnode = render(h => <div>test</div>);    expect(vnode.data).to.equal(undefined);  }) : void
+>it : (name: string, callback: () => void) => void
+>'should omit attribs if possible' : "should omit attribs if possible"
+>() => {    const vnode = render(h => <div>test</div>);    expect(vnode.data).to.equal(undefined);  } : () => void
+
+    const vnode = render(h => <div>test</div>);
+>vnode : any
+>render(h => <div>test</div>) : any
+>render : (render: any) => any
+>h => <div>test</div> : (h: any) => any
+>h : any
+><div>test</div> : any
+>div : any
+>div : any
+
+    expect(vnode.data).to.equal(undefined);
+>expect(vnode.data).to.equal(undefined) : void
+>expect(vnode.data).to.equal : (value: any) => void
+>expect(vnode.data).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data : any
+>vnode : any
+>data : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>undefined : undefined
+
+  });
+
+  it('should omit children argument if possible', () => {
+>it('should omit children argument if possible', () => {    const vnode = render(h => <div />);    const children = vnode.children;    expect(children).to.equal(undefined);  }) : void
+>it : (name: string, callback: () => void) => void
+>'should omit children argument if possible' : "should omit children argument if possible"
+>() => {    const vnode = render(h => <div />);    const children = vnode.children;    expect(children).to.equal(undefined);  } : () => void
+
+    const vnode = render(h => <div />);
+>vnode : any
+>render(h => <div />) : any
+>render : (render: any) => any
+>h => <div /> : (h: any) => any
+>h : any
+><div /> : any
+>div : any
+
+    const children = vnode.children;
+>children : any
+>vnode.children : any
+>vnode : any
+>children : any
+
+    expect(children).to.equal(undefined);
+>expect(children).to.equal(undefined) : void
+>expect(children).to.equal : (value: any) => void
+>expect(children).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(children) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>children : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>undefined : undefined
+
+  });
+
+  it('should handle top-level special attrs', () => {
+>it('should handle top-level special attrs', () => {    const vnode = render(h => (      <div        class="foo"        style="bar"        key="key"        ref="ref"        refInFor        slot="slot">      </div>    ));    expect(vnode.data.class).to.equal('foo');    expect(vnode.data.style).to.equal('bar');    expect(vnode.data.key).to.equal('key');    expect(vnode.data.ref).to.equal('ref');    expect(vnode.data.refInFor).to.be.true;    expect(vnode.data.slot).to.equal('slot');  }) : void
+>it : (name: string, callback: () => void) => void
+>'should handle top-level special attrs' : "should handle top-level special attrs"
+>() => {    const vnode = render(h => (      <div        class="foo"        style="bar"        key="key"        ref="ref"        refInFor        slot="slot">      </div>    ));    expect(vnode.data.class).to.equal('foo');    expect(vnode.data.style).to.equal('bar');    expect(vnode.data.key).to.equal('key');    expect(vnode.data.ref).to.equal('ref');    expect(vnode.data.refInFor).to.be.true;    expect(vnode.data.slot).to.equal('slot');  } : () => void
+
+    const vnode = render(h => (
+>vnode : any
+>render(h => (      <div        class="foo"        style="bar"        key="key"        ref="ref"        refInFor        slot="slot">      </div>    )) : any
+>render : (render: any) => any
+>h => (      <div        class="foo"        style="bar"        key="key"        ref="ref"        refInFor        slot="slot">      </div>    ) : (h: any) => any
+>h : any
+>(      <div        class="foo"        style="bar"        key="key"        ref="ref"        refInFor        slot="slot">      </div>    ) : any
+
+      <div
+><div        class="foo"        style="bar"        key="key"        ref="ref"        refInFor        slot="slot">      </div> : any
+>div : any
+
+        class="foo"
+>class : string
+
+        style="bar"
+>style : string
+
+        key="key"
+>key : string
+
+        ref="ref"
+>ref : string
+
+        refInFor
+>refInFor : true
+
+        slot="slot">
+>slot : string
+
+      </div>
+>div : any
+
+    ));
+    expect(vnode.data.class).to.equal('foo');
+>expect(vnode.data.class).to.equal('foo') : void
+>expect(vnode.data.class).to.equal : (value: any) => void
+>expect(vnode.data.class).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.class) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.class : any
+>vnode.data : any
+>vnode : any
+>data : any
+>class : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'foo' : "foo"
+
+    expect(vnode.data.style).to.equal('bar');
+>expect(vnode.data.style).to.equal('bar') : void
+>expect(vnode.data.style).to.equal : (value: any) => void
+>expect(vnode.data.style).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.style) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.style : any
+>vnode.data : any
+>vnode : any
+>data : any
+>style : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'bar' : "bar"
+
+    expect(vnode.data.key).to.equal('key');
+>expect(vnode.data.key).to.equal('key') : void
+>expect(vnode.data.key).to.equal : (value: any) => void
+>expect(vnode.data.key).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.key) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.key : any
+>vnode.data : any
+>vnode : any
+>data : any
+>key : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'key' : "key"
+
+    expect(vnode.data.ref).to.equal('ref');
+>expect(vnode.data.ref).to.equal('ref') : void
+>expect(vnode.data.ref).to.equal : (value: any) => void
+>expect(vnode.data.ref).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.ref) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.ref : any
+>vnode.data : any
+>vnode : any
+>data : any
+>ref : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'ref' : "ref"
+
+    expect(vnode.data.refInFor).to.be.true;
+>expect(vnode.data.refInFor).to.be.true : boolean
+>expect(vnode.data.refInFor).to.be : { true: boolean; false: boolean; }
+>expect(vnode.data.refInFor).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.refInFor) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.refInFor : any
+>vnode.data : any
+>vnode : any
+>data : any
+>refInFor : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>be : { true: boolean; false: boolean; }
+>true : boolean
+
+    expect(vnode.data.slot).to.equal('slot');
+>expect(vnode.data.slot).to.equal('slot') : void
+>expect(vnode.data.slot).to.equal : (value: any) => void
+>expect(vnode.data.slot).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.slot) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.slot : any
+>vnode.data : any
+>vnode : any
+>data : any
+>slot : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'slot' : "slot"
+
+  })
+
+  it('should handle nested properties', () => {
+>it('should handle nested properties', () => {    const noop = _ => _;    const vnode = render(h => (      <div        props-on-success={noop}        on-click={noop}        on-kebab-case={noop}        domProps-innerHTML="<p>hi</p>"        hook-insert={noop}>      </div>    ));    expect(vnode.data.props['on-success']).to.equal(noop);    expect(vnode.data.on.click).to.equal(noop);    expect(vnode.data.on['kebab-case']).to.equal(noop);    expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>');    expect(vnode.data.hook.insert).to.equal(noop);  }) : void
+>it : (name: string, callback: () => void) => void
+>'should handle nested properties' : "should handle nested properties"
+>() => {    const noop = _ => _;    const vnode = render(h => (      <div        props-on-success={noop}        on-click={noop}        on-kebab-case={noop}        domProps-innerHTML="<p>hi</p>"        hook-insert={noop}>      </div>    ));    expect(vnode.data.props['on-success']).to.equal(noop);    expect(vnode.data.on.click).to.equal(noop);    expect(vnode.data.on['kebab-case']).to.equal(noop);    expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>');    expect(vnode.data.hook.insert).to.equal(noop);  } : () => void
+
+    const noop = _ => _;
+>noop : (_: any) => any
+>_ => _ : (_: any) => any
+>_ : any
+>_ : any
+
+    const vnode = render(h => (
+>vnode : any
+>render(h => (      <div        props-on-success={noop}        on-click={noop}        on-kebab-case={noop}        domProps-innerHTML="<p>hi</p>"        hook-insert={noop}>      </div>    )) : any
+>render : (render: any) => any
+>h => (      <div        props-on-success={noop}        on-click={noop}        on-kebab-case={noop}        domProps-innerHTML="<p>hi</p>"        hook-insert={noop}>      </div>    ) : (h: any) => any
+>h : any
+>(      <div        props-on-success={noop}        on-click={noop}        on-kebab-case={noop}        domProps-innerHTML="<p>hi</p>"        hook-insert={noop}>      </div>    ) : any
+
+      <div
+><div        props-on-success={noop}        on-click={noop}        on-kebab-case={noop}        domProps-innerHTML="<p>hi</p>"        hook-insert={noop}>      </div> : any
+>div : any
+
+        props-on-success={noop}
+>props-on-success : (_: any) => any
+>noop : (_: any) => any
+
+        on-click={noop}
+>on-click : (_: any) => any
+>noop : (_: any) => any
+
+        on-kebab-case={noop}
+>on-kebab-case : (_: any) => any
+>noop : (_: any) => any
+
+        domProps-innerHTML="<p>hi</p>"
+>domProps-innerHTML : string
+
+        hook-insert={noop}>
+>hook-insert : (_: any) => any
+>noop : (_: any) => any
+
+      </div>
+>div : any
+
+    ));
+    expect(vnode.data.props['on-success']).to.equal(noop);
+>expect(vnode.data.props['on-success']).to.equal(noop) : void
+>expect(vnode.data.props['on-success']).to.equal : (value: any) => void
+>expect(vnode.data.props['on-success']).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.props['on-success']) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.props['on-success'] : any
+>vnode.data.props : any
+>vnode.data : any
+>vnode : any
+>data : any
+>props : any
+>'on-success' : "on-success"
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>noop : (_: any) => any
+
+    expect(vnode.data.on.click).to.equal(noop);
+>expect(vnode.data.on.click).to.equal(noop) : void
+>expect(vnode.data.on.click).to.equal : (value: any) => void
+>expect(vnode.data.on.click).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.on.click) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.on.click : any
+>vnode.data.on : any
+>vnode.data : any
+>vnode : any
+>data : any
+>on : any
+>click : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>noop : (_: any) => any
+
+    expect(vnode.data.on['kebab-case']).to.equal(noop);
+>expect(vnode.data.on['kebab-case']).to.equal(noop) : void
+>expect(vnode.data.on['kebab-case']).to.equal : (value: any) => void
+>expect(vnode.data.on['kebab-case']).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.on['kebab-case']) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.on['kebab-case'] : any
+>vnode.data.on : any
+>vnode.data : any
+>vnode : any
+>data : any
+>on : any
+>'kebab-case' : "kebab-case"
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>noop : (_: any) => any
+
+    expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>');
+>expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>') : void
+>expect(vnode.data.domProps.innerHTML).to.equal : (value: any) => void
+>expect(vnode.data.domProps.innerHTML).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.domProps.innerHTML) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.domProps.innerHTML : any
+>vnode.data.domProps : any
+>vnode.data : any
+>vnode : any
+>data : any
+>domProps : any
+>innerHTML : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'<p>hi</p>' : "<p>hi</p>"
+
+    expect(vnode.data.hook.insert).to.equal(noop);
+>expect(vnode.data.hook.insert).to.equal(noop) : void
+>expect(vnode.data.hook.insert).to.equal : (value: any) => void
+>expect(vnode.data.hook.insert).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.hook.insert) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.hook.insert : any
+>vnode.data.hook : any
+>vnode.data : any
+>vnode : any
+>data : any
+>hook : any
+>insert : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>noop : (_: any) => any
+
+  })
+
+  it('should handle nested properties (camelCase)', () => {
+>it('should handle nested properties (camelCase)', () => {    const noop = _ => _;    const vnode = render(h => (      <div        propsOnSuccess={noop}        onClick={noop}        onCamelCase={noop}        domPropsInnerHTML="<p>hi</p>"        hookInsert={noop}>      </div>    ));    expect(vnode.data.props.onSuccess).to.equal(noop);    expect(vnode.data.on.click).to.equal(noop);    expect(vnode.data.on.camelCase).to.equal(noop);    expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>');    expect(vnode.data.hook.insert).to.equal(noop);  }) : void
+>it : (name: string, callback: () => void) => void
+>'should handle nested properties (camelCase)' : "should handle nested properties (camelCase)"
+>() => {    const noop = _ => _;    const vnode = render(h => (      <div        propsOnSuccess={noop}        onClick={noop}        onCamelCase={noop}        domPropsInnerHTML="<p>hi</p>"        hookInsert={noop}>      </div>    ));    expect(vnode.data.props.onSuccess).to.equal(noop);    expect(vnode.data.on.click).to.equal(noop);    expect(vnode.data.on.camelCase).to.equal(noop);    expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>');    expect(vnode.data.hook.insert).to.equal(noop);  } : () => void
+
+    const noop = _ => _;
+>noop : (_: any) => any
+>_ => _ : (_: any) => any
+>_ : any
+>_ : any
+
+    const vnode = render(h => (
+>vnode : any
+>render(h => (      <div        propsOnSuccess={noop}        onClick={noop}        onCamelCase={noop}        domPropsInnerHTML="<p>hi</p>"        hookInsert={noop}>      </div>    )) : any
+>render : (render: any) => any
+>h => (      <div        propsOnSuccess={noop}        onClick={noop}        onCamelCase={noop}        domPropsInnerHTML="<p>hi</p>"        hookInsert={noop}>      </div>    ) : (h: any) => any
+>h : any
+>(      <div        propsOnSuccess={noop}        onClick={noop}        onCamelCase={noop}        domPropsInnerHTML="<p>hi</p>"        hookInsert={noop}>      </div>    ) : any
+
+      <div
+><div        propsOnSuccess={noop}        onClick={noop}        onCamelCase={noop}        domPropsInnerHTML="<p>hi</p>"        hookInsert={noop}>      </div> : any
+>div : any
+
+        propsOnSuccess={noop}
+>propsOnSuccess : (_: any) => any
+>noop : (_: any) => any
+
+        onClick={noop}
+>onClick : (_: any) => any
+>noop : (_: any) => any
+
+        onCamelCase={noop}
+>onCamelCase : (_: any) => any
+>noop : (_: any) => any
+
+        domPropsInnerHTML="<p>hi</p>"
+>domPropsInnerHTML : string
+
+        hookInsert={noop}>
+>hookInsert : (_: any) => any
+>noop : (_: any) => any
+
+      </div>
+>div : any
+
+    ));
+    expect(vnode.data.props.onSuccess).to.equal(noop);
+>expect(vnode.data.props.onSuccess).to.equal(noop) : void
+>expect(vnode.data.props.onSuccess).to.equal : (value: any) => void
+>expect(vnode.data.props.onSuccess).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.props.onSuccess) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.props.onSuccess : any
+>vnode.data.props : any
+>vnode.data : any
+>vnode : any
+>data : any
+>props : any
+>onSuccess : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>noop : (_: any) => any
+
+    expect(vnode.data.on.click).to.equal(noop);
+>expect(vnode.data.on.click).to.equal(noop) : void
+>expect(vnode.data.on.click).to.equal : (value: any) => void
+>expect(vnode.data.on.click).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.on.click) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.on.click : any
+>vnode.data.on : any
+>vnode.data : any
+>vnode : any
+>data : any
+>on : any
+>click : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>noop : (_: any) => any
+
+    expect(vnode.data.on.camelCase).to.equal(noop);
+>expect(vnode.data.on.camelCase).to.equal(noop) : void
+>expect(vnode.data.on.camelCase).to.equal : (value: any) => void
+>expect(vnode.data.on.camelCase).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.on.camelCase) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.on.camelCase : any
+>vnode.data.on : any
+>vnode.data : any
+>vnode : any
+>data : any
+>on : any
+>camelCase : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>noop : (_: any) => any
+
+    expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>');
+>expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>') : void
+>expect(vnode.data.domProps.innerHTML).to.equal : (value: any) => void
+>expect(vnode.data.domProps.innerHTML).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.domProps.innerHTML) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.domProps.innerHTML : any
+>vnode.data.domProps : any
+>vnode.data : any
+>vnode : any
+>data : any
+>domProps : any
+>innerHTML : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'<p>hi</p>' : "<p>hi</p>"
+
+    expect(vnode.data.hook.insert).to.equal(noop);
+>expect(vnode.data.hook.insert).to.equal(noop) : void
+>expect(vnode.data.hook.insert).to.equal : (value: any) => void
+>expect(vnode.data.hook.insert).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.hook.insert) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.hook.insert : any
+>vnode.data.hook : any
+>vnode.data : any
+>vnode : any
+>data : any
+>hook : any
+>insert : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>noop : (_: any) => any
+
+  });
+
+  it('should support data attributes', () => {
+>it('should support data attributes', () => {    const vnode = render(h => (      <div data-id="1"></div>    ));    expect(vnode.data.attrs['data-id']).to.equal('1');  }) : void
+>it : (name: string, callback: () => void) => void
+>'should support data attributes' : "should support data attributes"
+>() => {    const vnode = render(h => (      <div data-id="1"></div>    ));    expect(vnode.data.attrs['data-id']).to.equal('1');  } : () => void
+
+    const vnode = render(h => (
+>vnode : any
+>render(h => (      <div data-id="1"></div>    )) : any
+>render : (render: any) => any
+>h => (      <div data-id="1"></div>    ) : (h: any) => any
+>h : any
+>(      <div data-id="1"></div>    ) : any
+
+      <div data-id="1"></div>
+><div data-id="1"></div> : any
+>div : any
+>data-id : string
+>div : any
+
+    ));
+    expect(vnode.data.attrs['data-id']).to.equal('1');
+>expect(vnode.data.attrs['data-id']).to.equal('1') : void
+>expect(vnode.data.attrs['data-id']).to.equal : (value: any) => void
+>expect(vnode.data.attrs['data-id']).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.attrs['data-id']) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.attrs['data-id'] : any
+>vnode.data.attrs : any
+>vnode.data : any
+>vnode : any
+>data : any
+>attrs : any
+>'data-id' : "data-id"
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'1' : "1"
+
+  });
+
+  it('should handle identifier tag name as components', () => {
+>it('should handle identifier tag name as components', () => {    const Test = {};    const vnode = render(h => <Test/>);    expect(vnode.tag).to.contain('vue-component');  }) : void
+>it : (name: string, callback: () => void) => void
+>'should handle identifier tag name as components' : "should handle identifier tag name as components"
+>() => {    const Test = {};    const vnode = render(h => <Test/>);    expect(vnode.tag).to.contain('vue-component');  } : () => void
+
+    const Test = {};
+>Test : {}
+>{} : {}
+
+    const vnode = render(h => <Test/>);
+>vnode : any
+>render(h => <Test/>) : any
+>render : (render: any) => any
+>h => <Test/> : (h: any) => any
+>h : any
+><Test/> : any
+>Test : {}
+
+    expect(vnode.tag).to.contain('vue-component');
+>expect(vnode.tag).to.contain('vue-component') : void
+>expect(vnode.tag).to.contain : (value: any) => void
+>expect(vnode.tag).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.tag) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.tag : any
+>vnode : any
+>tag : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>contain : (value: any) => void
+>'vue-component' : "vue-component"
+
+  });
+
+  it('should work for components with children', () => {
+>it('should work for components with children', () => {    const Test = {};    const vnode = render(h => <Test><div>hi</div></Test>);    const children = vnode.componentOptions.children;    expect(children[0].tag).to.equal('div');  }) : void
+>it : (name: string, callback: () => void) => void
+>'should work for components with children' : "should work for components with children"
+>() => {    const Test = {};    const vnode = render(h => <Test><div>hi</div></Test>);    const children = vnode.componentOptions.children;    expect(children[0].tag).to.equal('div');  } : () => void
+
+    const Test = {};
+>Test : {}
+>{} : {}
+
+    const vnode = render(h => <Test><div>hi</div></Test>);
+>vnode : any
+>render(h => <Test><div>hi</div></Test>) : any
+>render : (render: any) => any
+>h => <Test><div>hi</div></Test> : (h: any) => any
+>h : any
+><Test><div>hi</div></Test> : any
+>Test : {}
+><div>hi</div> : any
+>div : any
+>div : any
+>Test : {}
+
+    const children = vnode.componentOptions.children;
+>children : any
+>vnode.componentOptions.children : any
+>vnode.componentOptions : any
+>vnode : any
+>componentOptions : any
+>children : any
+
+    expect(children[0].tag).to.equal('div');
+>expect(children[0].tag).to.equal('div') : void
+>expect(children[0].tag).to.equal : (value: any) => void
+>expect(children[0].tag).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(children[0].tag) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>children[0].tag : any
+>children[0] : any
+>children : any
+>0 : 0
+>tag : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'div' : "div"
+
+  });
+
+  it('should bind things in thunk with correct this context', () => {
+>it('should bind things in thunk with correct this context', () => {    const Test = {      render (h) {        return <div>{this.$slots.default}</div>      }    };    const context = { test: 'foo' };    const vnode = render((function (h) {      return <Test>{this.test}</Test>    }).bind(context));    const vm = createComponentInstanceForVnode(vnode);    const childVnode = vm._render();    expect(childVnode.tag).to.equal('div');    expect(childVnode.children[0].text).to.equal('foo');  }) : void
+>it : (name: string, callback: () => void) => void
+>'should bind things in thunk with correct this context' : "should bind things in thunk with correct this context"
+>() => {    const Test = {      render (h) {        return <div>{this.$slots.default}</div>      }    };    const context = { test: 'foo' };    const vnode = render((function (h) {      return <Test>{this.test}</Test>    }).bind(context));    const vm = createComponentInstanceForVnode(vnode);    const childVnode = vm._render();    expect(childVnode.tag).to.equal('div');    expect(childVnode.children[0].text).to.equal('foo');  } : () => void
+
+    const Test = {
+>Test : { render(h: any): any; }
+>{      render (h) {        return <div>{this.$slots.default}</div>      }    } : { render(h: any): any; }
+
+      render (h) {
+>render : (h: any) => any
+>h : any
+
+        return <div>{this.$slots.default}</div>
+><div>{this.$slots.default}</div> : any
+>div : any
+>this.$slots.default : any
+>this.$slots : any
+>this : any
+>$slots : any
+>default : any
+>div : any
+      }
+    };
+    const context = { test: 'foo' };
+>context : { test: string; }
+>{ test: 'foo' } : { test: string; }
+>test : string
+>'foo' : "foo"
+
+    const vnode = render((function (h) {
+>vnode : any
+>render((function (h) {      return <Test>{this.test}</Test>    }).bind(context)) : any
+>render : (render: any) => any
+>(function (h) {      return <Test>{this.test}</Test>    }).bind(context) : any
+>(function (h) {      return <Test>{this.test}</Test>    }).bind : (thisArg: any, ...argArray: any[]) => any
+>(function (h) {      return <Test>{this.test}</Test>    }) : (h: any) => any
+>function (h) {      return <Test>{this.test}</Test>    } : (h: any) => any
+>h : any
+
+      return <Test>{this.test}</Test>
+><Test>{this.test}</Test> : any
+>Test : { render(h: any): any; }
+>this.test : any
+>this : any
+>test : any
+>Test : { render(h: any): any; }
+
+    }).bind(context));
+>bind : (thisArg: any, ...argArray: any[]) => any
+>context : { test: string; }
+
+    const vm = createComponentInstanceForVnode(vnode);
+>vm : any
+>createComponentInstanceForVnode(vnode) : any
+>createComponentInstanceForVnode : (vnode: any) => any
+>vnode : any
+
+    const childVnode = vm._render();
+>childVnode : any
+>vm._render() : any
+>vm._render : any
+>vm : any
+>_render : any
+
+    expect(childVnode.tag).to.equal('div');
+>expect(childVnode.tag).to.equal('div') : void
+>expect(childVnode.tag).to.equal : (value: any) => void
+>expect(childVnode.tag).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(childVnode.tag) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>childVnode.tag : any
+>childVnode : any
+>tag : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'div' : "div"
+
+    expect(childVnode.children[0].text).to.equal('foo');
+>expect(childVnode.children[0].text).to.equal('foo') : void
+>expect(childVnode.children[0].text).to.equal : (value: any) => void
+>expect(childVnode.children[0].text).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(childVnode.children[0].text) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>childVnode.children[0].text : any
+>childVnode.children[0] : any
+>childVnode.children : any
+>childVnode : any
+>children : any
+>0 : 0
+>text : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'foo' : "foo"
+
+  });
+
+  it('spread (single object expression)', () => {
+>it('spread (single object expression)', () => {    const props = {      innerHTML: 2    };    const vnode = render(h => (      <div {...{ props }}/>    ));    expect(vnode.data.props.innerHTML).to.equal(2);  }) : void
+>it : (name: string, callback: () => void) => void
+>'spread (single object expression)' : "spread (single object expression)"
+>() => {    const props = {      innerHTML: 2    };    const vnode = render(h => (      <div {...{ props }}/>    ));    expect(vnode.data.props.innerHTML).to.equal(2);  } : () => void
+
+    const props = {
+>props : { innerHTML: number; }
+>{      innerHTML: 2    } : { innerHTML: number; }
+
+      innerHTML: 2
+>innerHTML : number
+>2 : 2
+
+    };
+    const vnode = render(h => (
+>vnode : any
+>render(h => (      <div {...{ props }}/>    )) : any
+>render : (render: any) => any
+>h => (      <div {...{ props }}/>    ) : (h: any) => any
+>h : any
+>(      <div {...{ props }}/>    ) : any
+
+      <div {...{ props }}/>
+><div {...{ props }}/> : any
+>div : any
+>{ props } : { props: { innerHTML: number; }; }
+>props : { innerHTML: number; }
+
+    ));
+    expect(vnode.data.props.innerHTML).to.equal(2);
+>expect(vnode.data.props.innerHTML).to.equal(2) : void
+>expect(vnode.data.props.innerHTML).to.equal : (value: any) => void
+>expect(vnode.data.props.innerHTML).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.props.innerHTML) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.props.innerHTML : any
+>vnode.data.props : any
+>vnode.data : any
+>vnode : any
+>data : any
+>props : any
+>innerHTML : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>2 : 2
+
+  })
+
+  it('spread (mixed)', () => {
+>it('spread (mixed)', () => {    const calls = [];    const data = {      attrs: {        id: 'hehe'      },      on: {        click: function () {          calls.push(1);        }      },      props: {        innerHTML: 2      },      hook: {        insert: function () {          calls.push(3);        }      },      class: ['a', 'b']    };    const vnode = render(h => (      <div href="huhu"        {...data}        class={{ c: true }}        on-click={() => calls.push(2)}        hook-insert={() => calls.push(4)} />    ));    expect(vnode.data.attrs.id).to.equal('hehe');    expect(vnode.data.attrs.href).to.equal('huhu');    expect(vnode.data.props.innerHTML).to.equal(2);    expect(vnode.data.class).to.deep.equal(['a', 'b', { c: true }]);    // merge handlers properly for on    vnode.data.on.click();    expect(calls).to.deep.equal([1, 2]);    // merge hooks properly    vnode.data.hook.insert();    expect(calls).to.deep.equal([1, 2, 3, 4]);  }) : void
+>it : (name: string, callback: () => void) => void
+>'spread (mixed)' : "spread (mixed)"
+>() => {    const calls = [];    const data = {      attrs: {        id: 'hehe'      },      on: {        click: function () {          calls.push(1);        }      },      props: {        innerHTML: 2      },      hook: {        insert: function () {          calls.push(3);        }      },      class: ['a', 'b']    };    const vnode = render(h => (      <div href="huhu"        {...data}        class={{ c: true }}        on-click={() => calls.push(2)}        hook-insert={() => calls.push(4)} />    ));    expect(vnode.data.attrs.id).to.equal('hehe');    expect(vnode.data.attrs.href).to.equal('huhu');    expect(vnode.data.props.innerHTML).to.equal(2);    expect(vnode.data.class).to.deep.equal(['a', 'b', { c: true }]);    // merge handlers properly for on    vnode.data.on.click();    expect(calls).to.deep.equal([1, 2]);    // merge hooks properly    vnode.data.hook.insert();    expect(calls).to.deep.equal([1, 2, 3, 4]);  } : () => void
+
+    const calls = [];
+>calls : any[]
+>[] : undefined[]
+
+    const data = {
+>data : { attrs: { id: string; }; on: { click: () => void; }; props: { innerHTML: number; }; hook: { insert: () => void; }; class: string[]; }
+>{      attrs: {        id: 'hehe'      },      on: {        click: function () {          calls.push(1);        }      },      props: {        innerHTML: 2      },      hook: {        insert: function () {          calls.push(3);        }      },      class: ['a', 'b']    } : { attrs: { id: string; }; on: { click: () => void; }; props: { innerHTML: number; }; hook: { insert: () => void; }; class: string[]; }
+
+      attrs: {
+>attrs : { id: string; }
+>{        id: 'hehe'      } : { id: string; }
+
+        id: 'hehe'
+>id : string
+>'hehe' : "hehe"
+
+      },
+      on: {
+>on : { click: () => void; }
+>{        click: function () {          calls.push(1);        }      } : { click: () => void; }
+
+        click: function () {
+>click : () => void
+>function () {          calls.push(1);        } : () => void
+
+          calls.push(1);
+>calls.push(1) : number
+>calls.push : (...items: any[]) => number
+>calls : any[]
+>push : (...items: any[]) => number
+>1 : 1
+        }
+      },
+      props: {
+>props : { innerHTML: number; }
+>{        innerHTML: 2      } : { innerHTML: number; }
+
+        innerHTML: 2
+>innerHTML : number
+>2 : 2
+
+      },
+      hook: {
+>hook : { insert: () => void; }
+>{        insert: function () {          calls.push(3);        }      } : { insert: () => void; }
+
+        insert: function () {
+>insert : () => void
+>function () {          calls.push(3);        } : () => void
+
+          calls.push(3);
+>calls.push(3) : number
+>calls.push : (...items: any[]) => number
+>calls : any[]
+>push : (...items: any[]) => number
+>3 : 3
+        }
+      },
+      class: ['a', 'b']
+>class : string[]
+>['a', 'b'] : string[]
+>'a' : "a"
+>'b' : "b"
+
+    };
+    const vnode = render(h => (
+>vnode : any
+>render(h => (      <div href="huhu"        {...data}        class={{ c: true }}        on-click={() => calls.push(2)}        hook-insert={() => calls.push(4)} />    )) : any
+>render : (render: any) => any
+>h => (      <div href="huhu"        {...data}        class={{ c: true }}        on-click={() => calls.push(2)}        hook-insert={() => calls.push(4)} />    ) : (h: any) => any
+>h : any
+>(      <div href="huhu"        {...data}        class={{ c: true }}        on-click={() => calls.push(2)}        hook-insert={() => calls.push(4)} />    ) : any
+
+      <div href="huhu"
+><div href="huhu"        {...data}        class={{ c: true }}        on-click={() => calls.push(2)}        hook-insert={() => calls.push(4)} /> : any
+>div : any
+>href : string
+
+        {...data}
+>data : { attrs: { id: string; }; on: { click: () => void; }; props: { innerHTML: number; }; hook: { insert: () => void; }; class: string[]; }
+
+        class={{ c: true }}
+>class : { c: boolean; }
+>{ c: true } : { c: boolean; }
+>c : boolean
+>true : true
+
+        on-click={() => calls.push(2)}
+>on-click : () => number
+>() => calls.push(2) : () => number
+>calls.push(2) : number
+>calls.push : (...items: any[]) => number
+>calls : any[]
+>push : (...items: any[]) => number
+>2 : 2
+
+        hook-insert={() => calls.push(4)} />
+>hook-insert : () => number
+>() => calls.push(4) : () => number
+>calls.push(4) : number
+>calls.push : (...items: any[]) => number
+>calls : any[]
+>push : (...items: any[]) => number
+>4 : 4
+
+    ));
+
+    expect(vnode.data.attrs.id).to.equal('hehe');
+>expect(vnode.data.attrs.id).to.equal('hehe') : void
+>expect(vnode.data.attrs.id).to.equal : (value: any) => void
+>expect(vnode.data.attrs.id).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.attrs.id) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.attrs.id : any
+>vnode.data.attrs : any
+>vnode.data : any
+>vnode : any
+>data : any
+>attrs : any
+>id : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'hehe' : "hehe"
+
+    expect(vnode.data.attrs.href).to.equal('huhu');
+>expect(vnode.data.attrs.href).to.equal('huhu') : void
+>expect(vnode.data.attrs.href).to.equal : (value: any) => void
+>expect(vnode.data.attrs.href).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.attrs.href) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.attrs.href : any
+>vnode.data.attrs : any
+>vnode.data : any
+>vnode : any
+>data : any
+>attrs : any
+>href : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'huhu' : "huhu"
+
+    expect(vnode.data.props.innerHTML).to.equal(2);
+>expect(vnode.data.props.innerHTML).to.equal(2) : void
+>expect(vnode.data.props.innerHTML).to.equal : (value: any) => void
+>expect(vnode.data.props.innerHTML).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.props.innerHTML) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.props.innerHTML : any
+>vnode.data.props : any
+>vnode.data : any
+>vnode : any
+>data : any
+>props : any
+>innerHTML : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>2 : 2
+
+    expect(vnode.data.class).to.deep.equal(['a', 'b', { c: true }]);
+>expect(vnode.data.class).to.deep.equal(['a', 'b', { c: true }]) : void
+>expect(vnode.data.class).to.deep.equal : (value: any) => void
+>expect(vnode.data.class).to.deep : { equal: (value: any) => void; }
+>expect(vnode.data.class).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.class) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.class : any
+>vnode.data : any
+>vnode : any
+>data : any
+>class : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>deep : { equal: (value: any) => void; }
+>equal : (value: any) => void
+>['a', 'b', { c: true }] : (string | { c: boolean; })[]
+>'a' : "a"
+>'b' : "b"
+>{ c: true } : { c: boolean; }
+>c : boolean
+>true : true
+
+    // merge handlers properly for on
+    vnode.data.on.click();
+>vnode.data.on.click() : any
+>vnode.data.on.click : any
+>vnode.data.on : any
+>vnode.data : any
+>vnode : any
+>data : any
+>on : any
+>click : any
+
+    expect(calls).to.deep.equal([1, 2]);
+>expect(calls).to.deep.equal([1, 2]) : void
+>expect(calls).to.deep.equal : (value: any) => void
+>expect(calls).to.deep : { equal: (value: any) => void; }
+>expect(calls).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(calls) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>calls : any[]
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>deep : { equal: (value: any) => void; }
+>equal : (value: any) => void
+>[1, 2] : number[]
+>1 : 1
+>2 : 2
+
+    // merge hooks properly
+    vnode.data.hook.insert();
+>vnode.data.hook.insert() : any
+>vnode.data.hook.insert : any
+>vnode.data.hook : any
+>vnode.data : any
+>vnode : any
+>data : any
+>hook : any
+>insert : any
+
+    expect(calls).to.deep.equal([1, 2, 3, 4]);
+>expect(calls).to.deep.equal([1, 2, 3, 4]) : void
+>expect(calls).to.deep.equal : (value: any) => void
+>expect(calls).to.deep : { equal: (value: any) => void; }
+>expect(calls).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(calls) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>calls : any[]
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>deep : { equal: (value: any) => void; }
+>equal : (value: any) => void
+>[1, 2, 3, 4] : number[]
+>1 : 1
+>2 : 2
+>3 : 3
+>4 : 4
+
+  });
+
+  it('custom directives', () => {
+>it('custom directives', () => {    const vnode = render(h => (      <div v-test={ 123 } v-other={ 234 } />    ));    expect(vnode.data.directives.length).to.equal(2);    expect(vnode.data.directives[0]).to.deep.equal({ name: 'test', value: 123 });    expect(vnode.data.directives[1]).to.deep.equal({ name: 'other', value: 234 });  }) : void
+>it : (name: string, callback: () => void) => void
+>'custom directives' : "custom directives"
+>() => {    const vnode = render(h => (      <div v-test={ 123 } v-other={ 234 } />    ));    expect(vnode.data.directives.length).to.equal(2);    expect(vnode.data.directives[0]).to.deep.equal({ name: 'test', value: 123 });    expect(vnode.data.directives[1]).to.deep.equal({ name: 'other', value: 234 });  } : () => void
+
+    const vnode = render(h => (
+>vnode : any
+>render(h => (      <div v-test={ 123 } v-other={ 234 } />    )) : any
+>render : (render: any) => any
+>h => (      <div v-test={ 123 } v-other={ 234 } />    ) : (h: any) => any
+>h : any
+>(      <div v-test={ 123 } v-other={ 234 } />    ) : any
+
+      <div v-test={ 123 } v-other={ 234 } />
+><div v-test={ 123 } v-other={ 234 } /> : any
+>div : any
+>v-test : number
+>123 : 123
+>v-other : number
+>234 : 234
+
+    ));
+
+    expect(vnode.data.directives.length).to.equal(2);
+>expect(vnode.data.directives.length).to.equal(2) : void
+>expect(vnode.data.directives.length).to.equal : (value: any) => void
+>expect(vnode.data.directives.length).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.directives.length) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.directives.length : any
+>vnode.data.directives : any
+>vnode.data : any
+>vnode : any
+>data : any
+>directives : any
+>length : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>2 : 2
+
+    expect(vnode.data.directives[0]).to.deep.equal({ name: 'test', value: 123 });
+>expect(vnode.data.directives[0]).to.deep.equal({ name: 'test', value: 123 }) : void
+>expect(vnode.data.directives[0]).to.deep.equal : (value: any) => void
+>expect(vnode.data.directives[0]).to.deep : { equal: (value: any) => void; }
+>expect(vnode.data.directives[0]).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.directives[0]) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.directives[0] : any
+>vnode.data.directives : any
+>vnode.data : any
+>vnode : any
+>data : any
+>directives : any
+>0 : 0
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>deep : { equal: (value: any) => void; }
+>equal : (value: any) => void
+>{ name: 'test', value: 123 } : { name: string; value: number; }
+>name : string
+>'test' : "test"
+>value : number
+>123 : 123
+
+    expect(vnode.data.directives[1]).to.deep.equal({ name: 'other', value: 234 });
+>expect(vnode.data.directives[1]).to.deep.equal({ name: 'other', value: 234 }) : void
+>expect(vnode.data.directives[1]).to.deep.equal : (value: any) => void
+>expect(vnode.data.directives[1]).to.deep : { equal: (value: any) => void; }
+>expect(vnode.data.directives[1]).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.directives[1]) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.directives[1] : any
+>vnode.data.directives : any
+>vnode.data : any
+>vnode : any
+>data : any
+>directives : any
+>1 : 1
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>deep : { equal: (value: any) => void; }
+>equal : (value: any) => void
+>{ name: 'other', value: 234 } : { name: string; value: number; }
+>name : string
+>'other' : "other"
+>value : number
+>234 : 234
+
+  })
+
+  it('xlink:href', () => {
+>it('xlink:href', () => {    const vnode = render(h => (      <use xlinkHref={'#name'}></use>    ));    expect(vnode.data.attrs['xlink:href']).to.equal('#name');  }) : void
+>it : (name: string, callback: () => void) => void
+>'xlink:href' : "xlink:href"
+>() => {    const vnode = render(h => (      <use xlinkHref={'#name'}></use>    ));    expect(vnode.data.attrs['xlink:href']).to.equal('#name');  } : () => void
+
+    const vnode = render(h => (
+>vnode : any
+>render(h => (      <use xlinkHref={'#name'}></use>    )) : any
+>render : (render: any) => any
+>h => (      <use xlinkHref={'#name'}></use>    ) : (h: any) => any
+>h : any
+>(      <use xlinkHref={'#name'}></use>    ) : any
+
+      <use xlinkHref={'#name'}></use>
+><use xlinkHref={'#name'}></use> : any
+>use : any
+>xlinkHref : string
+>'#name' : "#name"
+>use : any
+
+    ));
+
+    expect(vnode.data.attrs['xlink:href']).to.equal('#name');
+>expect(vnode.data.attrs['xlink:href']).to.equal('#name') : void
+>expect(vnode.data.attrs['xlink:href']).to.equal : (value: any) => void
+>expect(vnode.data.attrs['xlink:href']).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.attrs['xlink:href']) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.attrs['xlink:href'] : any
+>vnode.data.attrs : any
+>vnode.data : any
+>vnode : any
+>data : any
+>attrs : any
+>'xlink:href' : "xlink:href"
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'#name' : "#name"
+
+  })
+
+  it('merge class', () => {
+>it('merge class', () => {    const vnode = render(h => (      <div class="a" {...{ class: 'b' }}/>    ));    expect(vnode.data.class).to.deep.equal({ a: true, b: true });  }) : void
+>it : (name: string, callback: () => void) => void
+>'merge class' : "merge class"
+>() => {    const vnode = render(h => (      <div class="a" {...{ class: 'b' }}/>    ));    expect(vnode.data.class).to.deep.equal({ a: true, b: true });  } : () => void
+
+    const vnode = render(h => (
+>vnode : any
+>render(h => (      <div class="a" {...{ class: 'b' }}/>    )) : any
+>render : (render: any) => any
+>h => (      <div class="a" {...{ class: 'b' }}/>    ) : (h: any) => any
+>h : any
+>(      <div class="a" {...{ class: 'b' }}/>    ) : any
+
+      <div class="a" {...{ class: 'b' }}/>
+><div class="a" {...{ class: 'b' }}/> : any
+>div : any
+>class : string
+>{ class: 'b' } : { class: string; }
+>class : string
+>'b' : "b"
+
+    ));
+
+    expect(vnode.data.class).to.deep.equal({ a: true, b: true });
+>expect(vnode.data.class).to.deep.equal({ a: true, b: true }) : void
+>expect(vnode.data.class).to.deep.equal : (value: any) => void
+>expect(vnode.data.class).to.deep : { equal: (value: any) => void; }
+>expect(vnode.data.class).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.class) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.class : any
+>vnode.data : any
+>vnode : any
+>data : any
+>class : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>deep : { equal: (value: any) => void; }
+>equal : (value: any) => void
+>{ a: true, b: true } : { a: boolean; b: boolean; }
+>a : boolean
+>true : true
+>b : boolean
+>true : true
+
+  })
+
+  it('h injection in object methods', () => {
+>it('h injection in object methods', () => {    const obj = {      method () {        return <div>test</div>;      }    };    const vnode = render(h => obj.method.call({ $createElement: h }));    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  }) : void
+>it : (name: string, callback: () => void) => void
+>'h injection in object methods' : "h injection in object methods"
+>() => {    const obj = {      method () {        return <div>test</div>;      }    };    const vnode = render(h => obj.method.call({ $createElement: h }));    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  } : () => void
+
+    const obj = {
+>obj : { method(): any; }
+>{      method () {        return <div>test</div>;      }    } : { method(): any; }
+
+      method () {
+>method : () => any
+
+        return <div>test</div>;
+><div>test</div> : any
+>div : any
+>div : any
+      }
+    };
+    const vnode = render(h => obj.method.call({ $createElement: h }));
+>vnode : any
+>render(h => obj.method.call({ $createElement: h })) : any
+>render : (render: any) => any
+>h => obj.method.call({ $createElement: h }) : (h: any) => any
+>h : any
+>obj.method.call({ $createElement: h }) : any
+>obj.method.call : (thisArg: any, ...argArray: any[]) => any
+>obj.method : () => any
+>obj : { method(): any; }
+>method : () => any
+>call : (thisArg: any, ...argArray: any[]) => any
+>{ $createElement: h } : { $createElement: any; }
+>$createElement : any
+>h : any
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal('div') : void
+>expect(vnode.tag).to.equal : (value: any) => void
+>expect(vnode.tag).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.tag) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.tag : any
+>vnode : any
+>tag : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'div' : "div"
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal('test') : void
+>expect(vnode.children[0].text).to.equal : (value: any) => void
+>expect(vnode.children[0].text).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.children[0].text) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.children[0].text : any
+>vnode.children[0] : any
+>vnode.children : any
+>vnode : any
+>children : any
+>0 : 0
+>text : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'test' : "test"
+
+  })
+
+  it('h should not be injected in nested JSX expressions', () => {
+>it('h should not be injected in nested JSX expressions', () => {    const obj = {      method () {        return <div foo={{          render () {            return <div>bar</div>;          }        }}>test</div>;      }    };    const vnode = render(h => obj.method.call({ $createElement: h }));    expect(vnode.tag).to.equal('div');    const nested = vnode.data.attrs.foo.render();    expect(nested.tag).to.equal('div');    expect(nested.children[0].text).to.equal('bar');  }) : void
+>it : (name: string, callback: () => void) => void
+>'h should not be injected in nested JSX expressions' : "h should not be injected in nested JSX expressions"
+>() => {    const obj = {      method () {        return <div foo={{          render () {            return <div>bar</div>;          }        }}>test</div>;      }    };    const vnode = render(h => obj.method.call({ $createElement: h }));    expect(vnode.tag).to.equal('div');    const nested = vnode.data.attrs.foo.render();    expect(nested.tag).to.equal('div');    expect(nested.children[0].text).to.equal('bar');  } : () => void
+
+    const obj = {
+>obj : { method(): any; }
+>{      method () {        return <div foo={{          render () {            return <div>bar</div>;          }        }}>test</div>;      }    } : { method(): any; }
+
+      method () {
+>method : () => any
+
+        return <div foo={{
+><div foo={{          render () {            return <div>bar</div>;          }        }}>test</div> : any
+>div : any
+>foo : { render(): any; }
+>{          render () {            return <div>bar</div>;          }        } : { render(): any; }
+
+          render () {
+>render : () => any
+
+            return <div>bar</div>;
+><div>bar</div> : any
+>div : any
+>div : any
+          }
+        }}>test</div>;
+>div : any
+      }
+    };
+    const vnode = render(h => obj.method.call({ $createElement: h }));
+>vnode : any
+>render(h => obj.method.call({ $createElement: h })) : any
+>render : (render: any) => any
+>h => obj.method.call({ $createElement: h }) : (h: any) => any
+>h : any
+>obj.method.call({ $createElement: h }) : any
+>obj.method.call : (thisArg: any, ...argArray: any[]) => any
+>obj.method : () => any
+>obj : { method(): any; }
+>method : () => any
+>call : (thisArg: any, ...argArray: any[]) => any
+>{ $createElement: h } : { $createElement: any; }
+>$createElement : any
+>h : any
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal('div') : void
+>expect(vnode.tag).to.equal : (value: any) => void
+>expect(vnode.tag).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.tag) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.tag : any
+>vnode : any
+>tag : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'div' : "div"
+
+    const nested = vnode.data.attrs.foo.render();
+>nested : any
+>vnode.data.attrs.foo.render() : any
+>vnode.data.attrs.foo.render : any
+>vnode.data.attrs.foo : any
+>vnode.data.attrs : any
+>vnode.data : any
+>vnode : any
+>data : any
+>attrs : any
+>foo : any
+>render : any
+
+    expect(nested.tag).to.equal('div');
+>expect(nested.tag).to.equal('div') : void
+>expect(nested.tag).to.equal : (value: any) => void
+>expect(nested.tag).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(nested.tag) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>nested.tag : any
+>nested : any
+>tag : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'div' : "div"
+
+    expect(nested.children[0].text).to.equal('bar');
+>expect(nested.children[0].text).to.equal('bar') : void
+>expect(nested.children[0].text).to.equal : (value: any) => void
+>expect(nested.children[0].text).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(nested.children[0].text) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>nested.children[0].text : any
+>nested.children[0] : any
+>nested.children : any
+>nested : any
+>children : any
+>0 : 0
+>text : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'bar' : "bar"
+
+  });
+
+  it('h injection in object getters', () => {
+>it('h injection in object getters', () => {    const obj: any = {      get computed () {        return <div>test</div>;      }    };    const vnode = render(h => {      obj.$createElement = h;      return obj.computed;    });    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  }) : void
+>it : (name: string, callback: () => void) => void
+>'h injection in object getters' : "h injection in object getters"
+>() => {    const obj: any = {      get computed () {        return <div>test</div>;      }    };    const vnode = render(h => {      obj.$createElement = h;      return obj.computed;    });    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  } : () => void
+
+    const obj: any = {
+>obj : any
+>{      get computed () {        return <div>test</div>;      }    } : { readonly computed: any; }
+
+      get computed () {
+>computed : any
+
+        return <div>test</div>;
+><div>test</div> : any
+>div : any
+>div : any
+      }
+    };
+    const vnode = render(h => {
+>vnode : any
+>render(h => {      obj.$createElement = h;      return obj.computed;    }) : any
+>render : (render: any) => any
+>h => {      obj.$createElement = h;      return obj.computed;    } : (h: any) => any
+>h : any
+
+      obj.$createElement = h;
+>obj.$createElement = h : any
+>obj.$createElement : any
+>obj : any
+>$createElement : any
+>h : any
+
+      return obj.computed;
+>obj.computed : any
+>obj : any
+>computed : any
+
+    });
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal('div') : void
+>expect(vnode.tag).to.equal : (value: any) => void
+>expect(vnode.tag).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.tag) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.tag : any
+>vnode : any
+>tag : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'div' : "div"
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal('test') : void
+>expect(vnode.children[0].text).to.equal : (value: any) => void
+>expect(vnode.children[0].text).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.children[0].text) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.children[0].text : any
+>vnode.children[0] : any
+>vnode.children : any
+>vnode : any
+>children : any
+>0 : 0
+>text : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'test' : "test"
+
+  });
+
+  it('h injection in multi-level object getters', () => {
+>it('h injection in multi-level object getters', () => {    const obj: any = {      inherited: {        get computed () {          return <div>test</div>;        }      }    };    const vnode = render(h => {      obj.inherited.$createElement = h;      return obj.inherited.computed;    });    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  }) : void
+>it : (name: string, callback: () => void) => void
+>'h injection in multi-level object getters' : "h injection in multi-level object getters"
+>() => {    const obj: any = {      inherited: {        get computed () {          return <div>test</div>;        }      }    };    const vnode = render(h => {      obj.inherited.$createElement = h;      return obj.inherited.computed;    });    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  } : () => void
+
+    const obj: any = {
+>obj : any
+>{      inherited: {        get computed () {          return <div>test</div>;        }      }    } : { inherited: { readonly computed: any; }; }
+
+      inherited: {
+>inherited : { readonly computed: any; }
+>{        get computed () {          return <div>test</div>;        }      } : { readonly computed: any; }
+
+        get computed () {
+>computed : any
+
+          return <div>test</div>;
+><div>test</div> : any
+>div : any
+>div : any
+        }
+      }
+    };
+    const vnode = render(h => {
+>vnode : any
+>render(h => {      obj.inherited.$createElement = h;      return obj.inherited.computed;    }) : any
+>render : (render: any) => any
+>h => {      obj.inherited.$createElement = h;      return obj.inherited.computed;    } : (h: any) => any
+>h : any
+
+      obj.inherited.$createElement = h;
+>obj.inherited.$createElement = h : any
+>obj.inherited.$createElement : any
+>obj.inherited : any
+>obj : any
+>inherited : any
+>$createElement : any
+>h : any
+
+      return obj.inherited.computed;
+>obj.inherited.computed : any
+>obj.inherited : any
+>obj : any
+>inherited : any
+>computed : any
+
+    });
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal('div') : void
+>expect(vnode.tag).to.equal : (value: any) => void
+>expect(vnode.tag).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.tag) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.tag : any
+>vnode : any
+>tag : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'div' : "div"
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal('test') : void
+>expect(vnode.children[0].text).to.equal : (value: any) => void
+>expect(vnode.children[0].text).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.children[0].text) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.children[0].text : any
+>vnode.children[0] : any
+>vnode.children : any
+>vnode : any
+>children : any
+>0 : 0
+>text : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'test' : "test"
+
+  });
+
+  it('h injection in class methods', () => {
+>it('h injection in class methods', () => {    class Test {      $createElement: any;      constructor (h) {        this.$createElement = h;      }      render () {        return <div>test</div>;      }    };    const vnode = render(h => (new Test(h)).render(h));    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  }) : void
+>it : (name: string, callback: () => void) => void
+>'h injection in class methods' : "h injection in class methods"
+>() => {    class Test {      $createElement: any;      constructor (h) {        this.$createElement = h;      }      render () {        return <div>test</div>;      }    };    const vnode = render(h => (new Test(h)).render(h));    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  } : () => void
+
+    class Test {
+>Test : Test
+
+      $createElement: any;
+>$createElement : any
+
+      constructor (h) {
+>h : any
+
+        this.$createElement = h;
+>this.$createElement = h : any
+>this.$createElement : any
+>this : this
+>$createElement : any
+>h : any
+      }
+      render () {
+>render : () => any
+
+        return <div>test</div>;
+><div>test</div> : any
+>div : any
+>div : any
+      }
+    };
+    const vnode = render(h => (new Test(h)).render(h));
+>vnode : any
+>render(h => (new Test(h)).render(h)) : any
+>render : (render: any) => any
+>h => (new Test(h)).render(h) : (h: any) => any
+>h : any
+>(new Test(h)).render(h) : any
+>(new Test(h)).render : () => any
+>(new Test(h)) : Test
+>new Test(h) : Test
+>Test : typeof Test
+>h : any
+>render : () => any
+>h : any
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal('div') : void
+>expect(vnode.tag).to.equal : (value: any) => void
+>expect(vnode.tag).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.tag) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.tag : any
+>vnode : any
+>tag : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'div' : "div"
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal('test') : void
+>expect(vnode.children[0].text).to.equal : (value: any) => void
+>expect(vnode.children[0].text).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.children[0].text) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.children[0].text : any
+>vnode.children[0] : any
+>vnode.children : any
+>vnode : any
+>children : any
+>0 : 0
+>text : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'test' : "test"
+
+  });
+
+  it('h injection in class getters', () => {
+>it('h injection in class getters', () => {    class Test {      $createElement: any;      constructor (h) {        this.$createElement = h;      }      get computed () {        return <div>test</div>;      }    };    const vnode = render(h => (new Test(h)).computed);    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  }) : void
+>it : (name: string, callback: () => void) => void
+>'h injection in class getters' : "h injection in class getters"
+>() => {    class Test {      $createElement: any;      constructor (h) {        this.$createElement = h;      }      get computed () {        return <div>test</div>;      }    };    const vnode = render(h => (new Test(h)).computed);    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  } : () => void
+
+    class Test {
+>Test : Test
+
+      $createElement: any;
+>$createElement : any
+
+      constructor (h) {
+>h : any
+
+        this.$createElement = h;
+>this.$createElement = h : any
+>this.$createElement : any
+>this : this
+>$createElement : any
+>h : any
+      }
+      get computed () {
+>computed : any
+
+        return <div>test</div>;
+><div>test</div> : any
+>div : any
+>div : any
+      }
+    };
+    const vnode = render(h => (new Test(h)).computed);
+>vnode : any
+>render(h => (new Test(h)).computed) : any
+>render : (render: any) => any
+>h => (new Test(h)).computed : (h: any) => any
+>h : any
+>(new Test(h)).computed : any
+>(new Test(h)) : Test
+>new Test(h) : Test
+>Test : typeof Test
+>h : any
+>computed : any
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal('div') : void
+>expect(vnode.tag).to.equal : (value: any) => void
+>expect(vnode.tag).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.tag) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.tag : any
+>vnode : any
+>tag : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'div' : "div"
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal('test') : void
+>expect(vnode.children[0].text).to.equal : (value: any) => void
+>expect(vnode.children[0].text).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.children[0].text) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.children[0].text : any
+>vnode.children[0] : any
+>vnode.children : any
+>vnode : any
+>children : any
+>0 : 0
+>text : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'test' : "test"
+
+  });
+
+  it('h injection in methods with parameters', () => {
+>it('h injection in methods with parameters', () => {    class Test {      $createElement: any;      constructor (h) {        this.$createElement = h;      }      notRender (notH) {        return <div>{notH}</div>;      }    };    const vnode = render(h => (new Test(h)).notRender('test'));    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  }) : void
+>it : (name: string, callback: () => void) => void
+>'h injection in methods with parameters' : "h injection in methods with parameters"
+>() => {    class Test {      $createElement: any;      constructor (h) {        this.$createElement = h;      }      notRender (notH) {        return <div>{notH}</div>;      }    };    const vnode = render(h => (new Test(h)).notRender('test'));    expect(vnode.tag).to.equal('div');    expect(vnode.children[0].text).to.equal('test');  } : () => void
+
+    class Test {
+>Test : Test
+
+      $createElement: any;
+>$createElement : any
+
+      constructor (h) {
+>h : any
+
+        this.$createElement = h;
+>this.$createElement = h : any
+>this.$createElement : any
+>this : this
+>$createElement : any
+>h : any
+      }
+      notRender (notH) {
+>notRender : (notH: any) => any
+>notH : any
+
+        return <div>{notH}</div>;
+><div>{notH}</div> : any
+>div : any
+>notH : any
+>div : any
+      }
+    };
+    const vnode = render(h => (new Test(h)).notRender('test'));
+>vnode : any
+>render(h => (new Test(h)).notRender('test')) : any
+>render : (render: any) => any
+>h => (new Test(h)).notRender('test') : (h: any) => any
+>h : any
+>(new Test(h)).notRender('test') : any
+>(new Test(h)).notRender : (notH: any) => any
+>(new Test(h)) : Test
+>new Test(h) : Test
+>Test : typeof Test
+>h : any
+>notRender : (notH: any) => any
+>'test' : "test"
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal('div') : void
+>expect(vnode.tag).to.equal : (value: any) => void
+>expect(vnode.tag).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.tag) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.tag : any
+>vnode : any
+>tag : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'div' : "div"
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal('test') : void
+>expect(vnode.children[0].text).to.equal : (value: any) => void
+>expect(vnode.children[0].text).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.children[0].text) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.children[0].text : any
+>vnode.children[0] : any
+>vnode.children : any
+>vnode : any
+>children : any
+>0 : 0
+>text : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'test' : "test"
+
+  });
+
+  it('should handle special attrs properties', () => {
+>it('should handle special attrs properties', () => {    const vnode = render(h => (      <input value="value" />    ));    expect(vnode.data.attrs.value).to.equal('value');  }) : void
+>it : (name: string, callback: () => void) => void
+>'should handle special attrs properties' : "should handle special attrs properties"
+>() => {    const vnode = render(h => (      <input value="value" />    ));    expect(vnode.data.attrs.value).to.equal('value');  } : () => void
+
+    const vnode = render(h => (
+>vnode : any
+>render(h => (      <input value="value" />    )) : any
+>render : (render: any) => any
+>h => (      <input value="value" />    ) : (h: any) => any
+>h : any
+>(      <input value="value" />    ) : any
+
+      <input value="value" />
+><input value="value" /> : any
+>input : any
+>value : string
+
+    ));
+    expect(vnode.data.attrs.value).to.equal('value');
+>expect(vnode.data.attrs.value).to.equal('value') : void
+>expect(vnode.data.attrs.value).to.equal : (value: any) => void
+>expect(vnode.data.attrs.value).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.attrs.value) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.attrs.value : any
+>vnode.data.attrs : any
+>vnode.data : any
+>vnode : any
+>data : any
+>attrs : any
+>value : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'value' : "value"
+
+  });
+
+  it('should handle special domProps properties', () => {
+>it('should handle special domProps properties', () => {    const vnode = render(h => (      <input value={'some jsx expression'} />    ));    expect(vnode.data.domProps.value).to.equal('some jsx expression');  }) : void
+>it : (name: string, callback: () => void) => void
+>'should handle special domProps properties' : "should handle special domProps properties"
+>() => {    const vnode = render(h => (      <input value={'some jsx expression'} />    ));    expect(vnode.data.domProps.value).to.equal('some jsx expression');  } : () => void
+
+    const vnode = render(h => (
+>vnode : any
+>render(h => (      <input value={'some jsx expression'} />    )) : any
+>render : (render: any) => any
+>h => (      <input value={'some jsx expression'} />    ) : (h: any) => any
+>h : any
+>(      <input value={'some jsx expression'} />    ) : any
+
+      <input value={'some jsx expression'} />
+><input value={'some jsx expression'} /> : any
+>input : any
+>value : string
+>'some jsx expression' : "some jsx expression"
+
+    ));
+    expect(vnode.data.domProps.value).to.equal('some jsx expression');
+>expect(vnode.data.domProps.value).to.equal('some jsx expression') : void
+>expect(vnode.data.domProps.value).to.equal : (value: any) => void
+>expect(vnode.data.domProps.value).to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>expect(vnode.data.domProps.value) : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>vnode.data.domProps.value : any
+>vnode.data.domProps : any
+>vnode.data : any
+>vnode : any
+>data : any
+>domProps : any
+>value : any
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>equal : (value: any) => void
+>'some jsx expression' : "some jsx expression"
+
+  });
+});
+
+// helpers
+
+function render (render: any): any {
+>render : (render: any) => any
+>render : any
+
+  return undefined;
+>undefined : undefined
+}
+
+function createComponentInstanceForVnode (vnode: any): any {
+>createComponentInstanceForVnode : (vnode: any) => any
+>vnode : any
+
+  return undefined;
+>undefined : undefined
+}
+
+function describe(key: string, callback: () => void) { }
+>describe : (key: string, callback: () => void) => void
+>key : string
+>callback : () => void
+
+function it(name: string, callback: () => void) { }
+>it : (name: string, callback: () => void) => void
+>name : string
+>callback : () => void
+
+function expect(value: any) {
+>expect : (value: any) => { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+>value : any
+
+  return {
+>{    to: {      equal: function(value: any) { },      deep: {        equal: function(value: any) { }      },      contain: function(value: any) { },      be: {        true: true,        false: false      }    }  } : { to: { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }; }
+
+    to: {
+>to : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+>{      equal: function(value: any) { },      deep: {        equal: function(value: any) { }      },      contain: function(value: any) { },      be: {        true: true,        false: false      }    } : { equal: (value: any) => void; deep: { equal: (value: any) => void; }; contain: (value: any) => void; be: { true: boolean; false: boolean; }; }
+
+      equal: function(value: any) { },
+>equal : (value: any) => void
+>function(value: any) { } : (value: any) => void
+>value : any
+
+      deep: {
+>deep : { equal: (value: any) => void; }
+>{        equal: function(value: any) { }      } : { equal: (value: any) => void; }
+
+        equal: function(value: any) { }
+>equal : (value: any) => void
+>function(value: any) { } : (value: any) => void
+>value : any
+
+      },
+      contain: function(value: any) { },
+>contain : (value: any) => void
+>function(value: any) { } : (value: any) => void
+>value : any
+
+      be: {
+>be : { true: boolean; false: boolean; }
+>{        true: true,        false: false      } : { true: boolean; false: boolean; }
+
+        true: true,
+>true : boolean
+>true : true
+
+        false: false
+>false : boolean
+>false : false
+      }
+    }
+  };
+}
+;
+

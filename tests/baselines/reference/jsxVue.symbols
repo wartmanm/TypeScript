@@ -1,0 +1,1259 @@
+=== tests/cases/compiler/jsxVue.tsx ===
+describe('babel-plugin-transform-vue-jsx', () => {
+>describe : Symbol(describe, Decl(jsxVue.tsx, 331, 1))
+
+  it('should contain text', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const vnode = render(h => <div>test</div>);
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 2, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 2, 25))
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.tag).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 2, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.children[0].text).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 2, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('should bind text', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const text = 'foo';
+>text : Symbol(text, Decl(jsxVue.tsx, 8, 9))
+
+    const vnode = render(h => <div>{text}</div>);
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 9, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 9, 25))
+>text : Symbol(text, Decl(jsxVue.tsx, 8, 9))
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.tag).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 9, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.children[0].text).to.equal('foo');
+>expect(vnode.children[0].text).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.children[0].text).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 9, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('should extract attrs', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const vnode = render(h => <div id="hi" dir="ltr"></div>);
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 15, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 15, 25))
+>id : Symbol(id, Decl(jsxVue.tsx, 15, 34))
+>dir : Symbol(dir, Decl(jsxVue.tsx, 15, 42))
+
+    expect(vnode.data.attrs.id).to.equal('hi');
+>expect(vnode.data.attrs.id).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.attrs.id).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 15, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.data.attrs.dir).to.equal('ltr');
+>expect(vnode.data.attrs.dir).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.attrs.dir).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 15, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('should bind attr', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const id = 'foo';
+>id : Symbol(id, Decl(jsxVue.tsx, 21, 9))
+
+    const vnode = render(h => <div id={id}></div>);
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 22, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 22, 25))
+>id : Symbol(id, Decl(jsxVue.tsx, 22, 34))
+>id : Symbol(id, Decl(jsxVue.tsx, 21, 9))
+
+    expect(vnode.data.attrs.id).to.equal('foo');
+>expect(vnode.data.attrs.id).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.attrs.id).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 22, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('should omit attribs if possible', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const vnode = render(h => <div>test</div>);
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 27, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 27, 25))
+
+    expect(vnode.data).to.equal(undefined);
+>expect(vnode.data).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 27, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>undefined : Symbol(undefined)
+
+  });
+
+  it('should omit children argument if possible', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const vnode = render(h => <div />);
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 32, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 32, 25))
+
+    const children = vnode.children;
+>children : Symbol(children, Decl(jsxVue.tsx, 33, 9))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 32, 9))
+
+    expect(children).to.equal(undefined);
+>expect(children).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(children).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>children : Symbol(children, Decl(jsxVue.tsx, 33, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>undefined : Symbol(undefined)
+
+  });
+
+  it('should handle top-level special attrs', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const vnode = render(h => (
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 38, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 38, 25))
+
+      <div
+        class="foo"
+>class : Symbol(class, Decl(jsxVue.tsx, 39, 10))
+
+        style="bar"
+>style : Symbol(style, Decl(jsxVue.tsx, 40, 19))
+
+        key="key"
+>key : Symbol(key, Decl(jsxVue.tsx, 41, 19))
+
+        ref="ref"
+>ref : Symbol(ref, Decl(jsxVue.tsx, 42, 17))
+
+        refInFor
+>refInFor : Symbol(refInFor, Decl(jsxVue.tsx, 43, 17))
+
+        slot="slot">
+>slot : Symbol(slot, Decl(jsxVue.tsx, 44, 16))
+
+      </div>
+    ));
+    expect(vnode.data.class).to.equal('foo');
+>expect(vnode.data.class).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.class).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 38, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.data.style).to.equal('bar');
+>expect(vnode.data.style).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.style).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 38, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.data.key).to.equal('key');
+>expect(vnode.data.key).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.key).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 38, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.data.ref).to.equal('ref');
+>expect(vnode.data.ref).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.ref).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 38, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.data.refInFor).to.be.true;
+>expect(vnode.data.refInFor).to.be.true : Symbol(true, Decl(jsxVue.tsx, 343, 11))
+>expect(vnode.data.refInFor).to.be : Symbol(be, Decl(jsxVue.tsx, 342, 40))
+>expect(vnode.data.refInFor).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 38, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>be : Symbol(be, Decl(jsxVue.tsx, 342, 40))
+>true : Symbol(true, Decl(jsxVue.tsx, 343, 11))
+
+    expect(vnode.data.slot).to.equal('slot');
+>expect(vnode.data.slot).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.slot).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 38, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  })
+
+  it('should handle nested properties', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const noop = _ => _;
+>noop : Symbol(noop, Decl(jsxVue.tsx, 57, 9))
+>_ : Symbol(_, Decl(jsxVue.tsx, 57, 16))
+>_ : Symbol(_, Decl(jsxVue.tsx, 57, 16))
+
+    const vnode = render(h => (
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 58, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 58, 25))
+
+      <div
+        props-on-success={noop}
+>props-on-success : Symbol(props-on-success, Decl(jsxVue.tsx, 59, 10))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 57, 9))
+
+        on-click={noop}
+>on-click : Symbol(on-click, Decl(jsxVue.tsx, 60, 31))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 57, 9))
+
+        on-kebab-case={noop}
+>on-kebab-case : Symbol(on-kebab-case, Decl(jsxVue.tsx, 61, 23))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 57, 9))
+
+        domProps-innerHTML="<p>hi</p>"
+>domProps-innerHTML : Symbol(domProps-innerHTML, Decl(jsxVue.tsx, 62, 28))
+
+        hook-insert={noop}>
+>hook-insert : Symbol(hook-insert, Decl(jsxVue.tsx, 63, 38))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 57, 9))
+
+      </div>
+    ));
+    expect(vnode.data.props['on-success']).to.equal(noop);
+>expect(vnode.data.props['on-success']).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.props['on-success']).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 58, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 57, 9))
+
+    expect(vnode.data.on.click).to.equal(noop);
+>expect(vnode.data.on.click).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.on.click).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 58, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 57, 9))
+
+    expect(vnode.data.on['kebab-case']).to.equal(noop);
+>expect(vnode.data.on['kebab-case']).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.on['kebab-case']).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 58, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 57, 9))
+
+    expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>');
+>expect(vnode.data.domProps.innerHTML).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.domProps.innerHTML).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 58, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.data.hook.insert).to.equal(noop);
+>expect(vnode.data.hook.insert).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.hook.insert).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 58, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 57, 9))
+
+  })
+
+  it('should handle nested properties (camelCase)', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const noop = _ => _;
+>noop : Symbol(noop, Decl(jsxVue.tsx, 75, 9))
+>_ : Symbol(_, Decl(jsxVue.tsx, 75, 16))
+>_ : Symbol(_, Decl(jsxVue.tsx, 75, 16))
+
+    const vnode = render(h => (
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 76, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 76, 25))
+
+      <div
+        propsOnSuccess={noop}
+>propsOnSuccess : Symbol(propsOnSuccess, Decl(jsxVue.tsx, 77, 10))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 75, 9))
+
+        onClick={noop}
+>onClick : Symbol(onClick, Decl(jsxVue.tsx, 78, 29))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 75, 9))
+
+        onCamelCase={noop}
+>onCamelCase : Symbol(onCamelCase, Decl(jsxVue.tsx, 79, 22))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 75, 9))
+
+        domPropsInnerHTML="<p>hi</p>"
+>domPropsInnerHTML : Symbol(domPropsInnerHTML, Decl(jsxVue.tsx, 80, 26))
+
+        hookInsert={noop}>
+>hookInsert : Symbol(hookInsert, Decl(jsxVue.tsx, 81, 37))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 75, 9))
+
+      </div>
+    ));
+    expect(vnode.data.props.onSuccess).to.equal(noop);
+>expect(vnode.data.props.onSuccess).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.props.onSuccess).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 76, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 75, 9))
+
+    expect(vnode.data.on.click).to.equal(noop);
+>expect(vnode.data.on.click).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.on.click).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 76, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 75, 9))
+
+    expect(vnode.data.on.camelCase).to.equal(noop);
+>expect(vnode.data.on.camelCase).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.on.camelCase).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 76, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 75, 9))
+
+    expect(vnode.data.domProps.innerHTML).to.equal('<p>hi</p>');
+>expect(vnode.data.domProps.innerHTML).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.domProps.innerHTML).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 76, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.data.hook.insert).to.equal(noop);
+>expect(vnode.data.hook.insert).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.hook.insert).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 76, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>noop : Symbol(noop, Decl(jsxVue.tsx, 75, 9))
+
+  });
+
+  it('should support data attributes', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const vnode = render(h => (
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 93, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 93, 25))
+
+      <div data-id="1"></div>
+>data-id : Symbol(data-id, Decl(jsxVue.tsx, 94, 10))
+
+    ));
+    expect(vnode.data.attrs['data-id']).to.equal('1');
+>expect(vnode.data.attrs['data-id']).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.attrs['data-id']).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 93, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('should handle identifier tag name as components', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const Test = {};
+>Test : Symbol(Test, Decl(jsxVue.tsx, 100, 9))
+
+    const vnode = render(h => <Test/>);
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 101, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 101, 25))
+>Test : Symbol(Test, Decl(jsxVue.tsx, 100, 9))
+
+    expect(vnode.tag).to.contain('vue-component');
+>expect(vnode.tag).to.contain : Symbol(contain, Decl(jsxVue.tsx, 341, 8))
+>expect(vnode.tag).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 101, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>contain : Symbol(contain, Decl(jsxVue.tsx, 341, 8))
+
+  });
+
+  it('should work for components with children', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const Test = {};
+>Test : Symbol(Test, Decl(jsxVue.tsx, 106, 9))
+
+    const vnode = render(h => <Test><div>hi</div></Test>);
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 107, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 107, 25))
+>Test : Symbol(Test, Decl(jsxVue.tsx, 106, 9))
+>Test : Symbol(Test, Decl(jsxVue.tsx, 106, 9))
+
+    const children = vnode.componentOptions.children;
+>children : Symbol(children, Decl(jsxVue.tsx, 108, 9))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 107, 9))
+
+    expect(children[0].tag).to.equal('div');
+>expect(children[0].tag).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(children[0].tag).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>children : Symbol(children, Decl(jsxVue.tsx, 108, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('should bind things in thunk with correct this context', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const Test = {
+>Test : Symbol(Test, Decl(jsxVue.tsx, 113, 9))
+
+      render (h) {
+>render : Symbol(render, Decl(jsxVue.tsx, 113, 18))
+>h : Symbol(h, Decl(jsxVue.tsx, 114, 14))
+
+        return <div>{this.$slots.default}</div>
+      }
+    };
+    const context = { test: 'foo' };
+>context : Symbol(context, Decl(jsxVue.tsx, 118, 9))
+>test : Symbol(test, Decl(jsxVue.tsx, 118, 21))
+
+    const vnode = render((function (h) {
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 119, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>(function (h) {      return <Test>{this.test}</Test>    }).bind : Symbol(Function.bind, Decl(lib.d.ts, --, --))
+>h : Symbol(h, Decl(jsxVue.tsx, 119, 36))
+
+      return <Test>{this.test}</Test>
+>Test : Symbol(Test, Decl(jsxVue.tsx, 113, 9))
+>Test : Symbol(Test, Decl(jsxVue.tsx, 113, 9))
+
+    }).bind(context));
+>bind : Symbol(Function.bind, Decl(lib.d.ts, --, --))
+>context : Symbol(context, Decl(jsxVue.tsx, 118, 9))
+
+    const vm = createComponentInstanceForVnode(vnode);
+>vm : Symbol(vm, Decl(jsxVue.tsx, 122, 9))
+>createComponentInstanceForVnode : Symbol(createComponentInstanceForVnode, Decl(jsxVue.tsx, 327, 1))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 119, 9))
+
+    const childVnode = vm._render();
+>childVnode : Symbol(childVnode, Decl(jsxVue.tsx, 123, 9))
+>vm : Symbol(vm, Decl(jsxVue.tsx, 122, 9))
+
+    expect(childVnode.tag).to.equal('div');
+>expect(childVnode.tag).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(childVnode.tag).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>childVnode : Symbol(childVnode, Decl(jsxVue.tsx, 123, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(childVnode.children[0].text).to.equal('foo');
+>expect(childVnode.children[0].text).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(childVnode.children[0].text).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>childVnode : Symbol(childVnode, Decl(jsxVue.tsx, 123, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('spread (single object expression)', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const props = {
+>props : Symbol(props, Decl(jsxVue.tsx, 129, 9))
+
+      innerHTML: 2
+>innerHTML : Symbol(innerHTML, Decl(jsxVue.tsx, 129, 19))
+
+    };
+    const vnode = render(h => (
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 132, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 132, 25))
+
+      <div {...{ props }}/>
+>props : Symbol(props, Decl(jsxVue.tsx, 133, 16))
+
+    ));
+    expect(vnode.data.props.innerHTML).to.equal(2);
+>expect(vnode.data.props.innerHTML).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.props.innerHTML).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 132, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  })
+
+  it('spread (mixed)', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const calls = [];
+>calls : Symbol(calls, Decl(jsxVue.tsx, 139, 9))
+
+    const data = {
+>data : Symbol(data, Decl(jsxVue.tsx, 140, 9))
+
+      attrs: {
+>attrs : Symbol(attrs, Decl(jsxVue.tsx, 140, 18))
+
+        id: 'hehe'
+>id : Symbol(id, Decl(jsxVue.tsx, 141, 14))
+
+      },
+      on: {
+>on : Symbol(on, Decl(jsxVue.tsx, 143, 8))
+
+        click: function () {
+>click : Symbol(click, Decl(jsxVue.tsx, 144, 11))
+
+          calls.push(1);
+>calls.push : Symbol(Array.push, Decl(lib.d.ts, --, --))
+>calls : Symbol(calls, Decl(jsxVue.tsx, 139, 9))
+>push : Symbol(Array.push, Decl(lib.d.ts, --, --))
+        }
+      },
+      props: {
+>props : Symbol(props, Decl(jsxVue.tsx, 148, 8))
+
+        innerHTML: 2
+>innerHTML : Symbol(innerHTML, Decl(jsxVue.tsx, 149, 14))
+
+      },
+      hook: {
+>hook : Symbol(hook, Decl(jsxVue.tsx, 151, 8))
+
+        insert: function () {
+>insert : Symbol(insert, Decl(jsxVue.tsx, 152, 13))
+
+          calls.push(3);
+>calls.push : Symbol(Array.push, Decl(lib.d.ts, --, --))
+>calls : Symbol(calls, Decl(jsxVue.tsx, 139, 9))
+>push : Symbol(Array.push, Decl(lib.d.ts, --, --))
+        }
+      },
+      class: ['a', 'b']
+>class : Symbol(class, Decl(jsxVue.tsx, 156, 8))
+
+    };
+    const vnode = render(h => (
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 159, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 159, 25))
+
+      <div href="huhu"
+>href : Symbol(href, Decl(jsxVue.tsx, 160, 10))
+
+        {...data}
+>data : Symbol(data, Decl(jsxVue.tsx, 140, 9))
+
+        class={{ c: true }}
+>class : Symbol(class, Decl(jsxVue.tsx, 161, 17))
+>c : Symbol(c, Decl(jsxVue.tsx, 162, 16))
+
+        on-click={() => calls.push(2)}
+>on-click : Symbol(on-click, Decl(jsxVue.tsx, 162, 27))
+>calls.push : Symbol(Array.push, Decl(lib.d.ts, --, --))
+>calls : Symbol(calls, Decl(jsxVue.tsx, 139, 9))
+>push : Symbol(Array.push, Decl(lib.d.ts, --, --))
+
+        hook-insert={() => calls.push(4)} />
+>hook-insert : Symbol(hook-insert, Decl(jsxVue.tsx, 163, 38))
+>calls.push : Symbol(Array.push, Decl(lib.d.ts, --, --))
+>calls : Symbol(calls, Decl(jsxVue.tsx, 139, 9))
+>push : Symbol(Array.push, Decl(lib.d.ts, --, --))
+
+    ));
+
+    expect(vnode.data.attrs.id).to.equal('hehe');
+>expect(vnode.data.attrs.id).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.attrs.id).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 159, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.data.attrs.href).to.equal('huhu');
+>expect(vnode.data.attrs.href).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.attrs.href).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 159, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.data.props.innerHTML).to.equal(2);
+>expect(vnode.data.props.innerHTML).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.props.innerHTML).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 159, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.data.class).to.deep.equal(['a', 'b', { c: true }]);
+>expect(vnode.data.class).to.deep.equal : Symbol(equal, Decl(jsxVue.tsx, 339, 13))
+>expect(vnode.data.class).to.deep : Symbol(deep, Decl(jsxVue.tsx, 338, 38))
+>expect(vnode.data.class).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 159, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>deep : Symbol(deep, Decl(jsxVue.tsx, 338, 38))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 339, 13))
+>c : Symbol(c, Decl(jsxVue.tsx, 170, 55))
+
+    // merge handlers properly for on
+    vnode.data.on.click();
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 159, 9))
+
+    expect(calls).to.deep.equal([1, 2]);
+>expect(calls).to.deep.equal : Symbol(equal, Decl(jsxVue.tsx, 339, 13))
+>expect(calls).to.deep : Symbol(deep, Decl(jsxVue.tsx, 338, 38))
+>expect(calls).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>calls : Symbol(calls, Decl(jsxVue.tsx, 139, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>deep : Symbol(deep, Decl(jsxVue.tsx, 338, 38))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 339, 13))
+
+    // merge hooks properly
+    vnode.data.hook.insert();
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 159, 9))
+
+    expect(calls).to.deep.equal([1, 2, 3, 4]);
+>expect(calls).to.deep.equal : Symbol(equal, Decl(jsxVue.tsx, 339, 13))
+>expect(calls).to.deep : Symbol(deep, Decl(jsxVue.tsx, 338, 38))
+>expect(calls).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>calls : Symbol(calls, Decl(jsxVue.tsx, 139, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>deep : Symbol(deep, Decl(jsxVue.tsx, 338, 38))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 339, 13))
+
+  });
+
+  it('custom directives', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const vnode = render(h => (
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 180, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 180, 25))
+
+      <div v-test={ 123 } v-other={ 234 } />
+>v-test : Symbol(v-test, Decl(jsxVue.tsx, 181, 10))
+>v-other : Symbol(v-other, Decl(jsxVue.tsx, 181, 25))
+
+    ));
+
+    expect(vnode.data.directives.length).to.equal(2);
+>expect(vnode.data.directives.length).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.directives.length).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 180, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.data.directives[0]).to.deep.equal({ name: 'test', value: 123 });
+>expect(vnode.data.directives[0]).to.deep.equal : Symbol(equal, Decl(jsxVue.tsx, 339, 13))
+>expect(vnode.data.directives[0]).to.deep : Symbol(deep, Decl(jsxVue.tsx, 338, 38))
+>expect(vnode.data.directives[0]).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 180, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>deep : Symbol(deep, Decl(jsxVue.tsx, 338, 38))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 339, 13))
+>name : Symbol(name, Decl(jsxVue.tsx, 185, 52))
+>value : Symbol(value, Decl(jsxVue.tsx, 185, 66))
+
+    expect(vnode.data.directives[1]).to.deep.equal({ name: 'other', value: 234 });
+>expect(vnode.data.directives[1]).to.deep.equal : Symbol(equal, Decl(jsxVue.tsx, 339, 13))
+>expect(vnode.data.directives[1]).to.deep : Symbol(deep, Decl(jsxVue.tsx, 338, 38))
+>expect(vnode.data.directives[1]).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 180, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>deep : Symbol(deep, Decl(jsxVue.tsx, 338, 38))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 339, 13))
+>name : Symbol(name, Decl(jsxVue.tsx, 186, 52))
+>value : Symbol(value, Decl(jsxVue.tsx, 186, 67))
+
+  })
+
+  it('xlink:href', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const vnode = render(h => (
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 190, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 190, 25))
+
+      <use xlinkHref={'#name'}></use>
+>xlinkHref : Symbol(xlinkHref, Decl(jsxVue.tsx, 191, 10))
+
+    ));
+
+    expect(vnode.data.attrs['xlink:href']).to.equal('#name');
+>expect(vnode.data.attrs['xlink:href']).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.attrs['xlink:href']).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 190, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  })
+
+  it('merge class', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const vnode = render(h => (
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 198, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 198, 25))
+
+      <div class="a" {...{ class: 'b' }}/>
+>class : Symbol(class, Decl(jsxVue.tsx, 199, 10))
+>class : Symbol(class, Decl(jsxVue.tsx, 199, 26))
+
+    ));
+
+    expect(vnode.data.class).to.deep.equal({ a: true, b: true });
+>expect(vnode.data.class).to.deep.equal : Symbol(equal, Decl(jsxVue.tsx, 339, 13))
+>expect(vnode.data.class).to.deep : Symbol(deep, Decl(jsxVue.tsx, 338, 38))
+>expect(vnode.data.class).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 198, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>deep : Symbol(deep, Decl(jsxVue.tsx, 338, 38))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 339, 13))
+>a : Symbol(a, Decl(jsxVue.tsx, 202, 44))
+>b : Symbol(b, Decl(jsxVue.tsx, 202, 53))
+
+  })
+
+  it('h injection in object methods', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const obj = {
+>obj : Symbol(obj, Decl(jsxVue.tsx, 206, 9))
+
+      method () {
+>method : Symbol(method, Decl(jsxVue.tsx, 206, 17))
+
+        return <div>test</div>;
+      }
+    };
+    const vnode = render(h => obj.method.call({ $createElement: h }));
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 211, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 211, 25))
+>obj.method.call : Symbol(Function.call, Decl(lib.d.ts, --, --))
+>obj.method : Symbol(method, Decl(jsxVue.tsx, 206, 17))
+>obj : Symbol(obj, Decl(jsxVue.tsx, 206, 9))
+>method : Symbol(method, Decl(jsxVue.tsx, 206, 17))
+>call : Symbol(Function.call, Decl(lib.d.ts, --, --))
+>$createElement : Symbol($createElement, Decl(jsxVue.tsx, 211, 47))
+>h : Symbol(h, Decl(jsxVue.tsx, 211, 25))
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.tag).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 211, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.children[0].text).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 211, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  })
+
+  it('h should not be injected in nested JSX expressions', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const obj = {
+>obj : Symbol(obj, Decl(jsxVue.tsx, 217, 9))
+
+      method () {
+>method : Symbol(method, Decl(jsxVue.tsx, 217, 17))
+
+        return <div foo={{
+>foo : Symbol(foo, Decl(jsxVue.tsx, 219, 19))
+
+          render () {
+>render : Symbol(render, Decl(jsxVue.tsx, 219, 26))
+
+            return <div>bar</div>;
+          }
+        }}>test</div>;
+      }
+    };
+    const vnode = render(h => obj.method.call({ $createElement: h }));
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 226, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 226, 25))
+>obj.method.call : Symbol(Function.call, Decl(lib.d.ts, --, --))
+>obj.method : Symbol(method, Decl(jsxVue.tsx, 217, 17))
+>obj : Symbol(obj, Decl(jsxVue.tsx, 217, 9))
+>method : Symbol(method, Decl(jsxVue.tsx, 217, 17))
+>call : Symbol(Function.call, Decl(lib.d.ts, --, --))
+>$createElement : Symbol($createElement, Decl(jsxVue.tsx, 226, 47))
+>h : Symbol(h, Decl(jsxVue.tsx, 226, 25))
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.tag).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 226, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    const nested = vnode.data.attrs.foo.render();
+>nested : Symbol(nested, Decl(jsxVue.tsx, 228, 9))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 226, 9))
+
+    expect(nested.tag).to.equal('div');
+>expect(nested.tag).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(nested.tag).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>nested : Symbol(nested, Decl(jsxVue.tsx, 228, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(nested.children[0].text).to.equal('bar');
+>expect(nested.children[0].text).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(nested.children[0].text).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>nested : Symbol(nested, Decl(jsxVue.tsx, 228, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('h injection in object getters', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const obj: any = {
+>obj : Symbol(obj, Decl(jsxVue.tsx, 234, 9))
+
+      get computed () {
+>computed : Symbol(computed, Decl(jsxVue.tsx, 234, 22))
+
+        return <div>test</div>;
+      }
+    };
+    const vnode = render(h => {
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 239, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 239, 25))
+
+      obj.$createElement = h;
+>obj : Symbol(obj, Decl(jsxVue.tsx, 234, 9))
+>h : Symbol(h, Decl(jsxVue.tsx, 239, 25))
+
+      return obj.computed;
+>obj : Symbol(obj, Decl(jsxVue.tsx, 234, 9))
+
+    });
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.tag).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 239, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.children[0].text).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 239, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('h injection in multi-level object getters', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const obj: any = {
+>obj : Symbol(obj, Decl(jsxVue.tsx, 248, 9))
+
+      inherited: {
+>inherited : Symbol(inherited, Decl(jsxVue.tsx, 248, 22))
+
+        get computed () {
+>computed : Symbol(computed, Decl(jsxVue.tsx, 249, 18))
+
+          return <div>test</div>;
+        }
+      }
+    };
+    const vnode = render(h => {
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 255, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 255, 25))
+
+      obj.inherited.$createElement = h;
+>obj : Symbol(obj, Decl(jsxVue.tsx, 248, 9))
+>h : Symbol(h, Decl(jsxVue.tsx, 255, 25))
+
+      return obj.inherited.computed;
+>obj : Symbol(obj, Decl(jsxVue.tsx, 248, 9))
+
+    });
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.tag).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 255, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.children[0].text).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 255, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('h injection in class methods', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    class Test {
+>Test : Symbol(Test, Decl(jsxVue.tsx, 263, 44))
+
+      $createElement: any;
+>$createElement : Symbol(Test.$createElement, Decl(jsxVue.tsx, 264, 16))
+
+      constructor (h) {
+>h : Symbol(h, Decl(jsxVue.tsx, 266, 19))
+
+        this.$createElement = h;
+>this.$createElement : Symbol(Test.$createElement, Decl(jsxVue.tsx, 264, 16))
+>this : Symbol(Test, Decl(jsxVue.tsx, 263, 44))
+>$createElement : Symbol(Test.$createElement, Decl(jsxVue.tsx, 264, 16))
+>h : Symbol(h, Decl(jsxVue.tsx, 266, 19))
+      }
+      render () {
+>render : Symbol(Test.render, Decl(jsxVue.tsx, 268, 7))
+
+        return <div>test</div>;
+      }
+    };
+    const vnode = render(h => (new Test(h)).render(h));
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 273, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 273, 25))
+>(new Test(h)).render : Symbol(Test.render, Decl(jsxVue.tsx, 268, 7))
+>Test : Symbol(Test, Decl(jsxVue.tsx, 263, 44))
+>h : Symbol(h, Decl(jsxVue.tsx, 273, 25))
+>render : Symbol(Test.render, Decl(jsxVue.tsx, 268, 7))
+>h : Symbol(h, Decl(jsxVue.tsx, 273, 25))
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.tag).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 273, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.children[0].text).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 273, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('h injection in class getters', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    class Test {
+>Test : Symbol(Test, Decl(jsxVue.tsx, 278, 44))
+
+      $createElement: any;
+>$createElement : Symbol(Test.$createElement, Decl(jsxVue.tsx, 279, 16))
+
+      constructor (h) {
+>h : Symbol(h, Decl(jsxVue.tsx, 281, 19))
+
+        this.$createElement = h;
+>this.$createElement : Symbol(Test.$createElement, Decl(jsxVue.tsx, 279, 16))
+>this : Symbol(Test, Decl(jsxVue.tsx, 278, 44))
+>$createElement : Symbol(Test.$createElement, Decl(jsxVue.tsx, 279, 16))
+>h : Symbol(h, Decl(jsxVue.tsx, 281, 19))
+      }
+      get computed () {
+>computed : Symbol(Test.computed, Decl(jsxVue.tsx, 283, 7))
+
+        return <div>test</div>;
+      }
+    };
+    const vnode = render(h => (new Test(h)).computed);
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 288, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 288, 25))
+>(new Test(h)).computed : Symbol(Test.computed, Decl(jsxVue.tsx, 283, 7))
+>Test : Symbol(Test, Decl(jsxVue.tsx, 278, 44))
+>h : Symbol(h, Decl(jsxVue.tsx, 288, 25))
+>computed : Symbol(Test.computed, Decl(jsxVue.tsx, 283, 7))
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.tag).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 288, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.children[0].text).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 288, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('h injection in methods with parameters', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    class Test {
+>Test : Symbol(Test, Decl(jsxVue.tsx, 293, 54))
+
+      $createElement: any;
+>$createElement : Symbol(Test.$createElement, Decl(jsxVue.tsx, 294, 16))
+
+      constructor (h) {
+>h : Symbol(h, Decl(jsxVue.tsx, 296, 19))
+
+        this.$createElement = h;
+>this.$createElement : Symbol(Test.$createElement, Decl(jsxVue.tsx, 294, 16))
+>this : Symbol(Test, Decl(jsxVue.tsx, 293, 54))
+>$createElement : Symbol(Test.$createElement, Decl(jsxVue.tsx, 294, 16))
+>h : Symbol(h, Decl(jsxVue.tsx, 296, 19))
+      }
+      notRender (notH) {
+>notRender : Symbol(Test.notRender, Decl(jsxVue.tsx, 298, 7))
+>notH : Symbol(notH, Decl(jsxVue.tsx, 299, 17))
+
+        return <div>{notH}</div>;
+>notH : Symbol(notH, Decl(jsxVue.tsx, 299, 17))
+      }
+    };
+    const vnode = render(h => (new Test(h)).notRender('test'));
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 303, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 303, 25))
+>(new Test(h)).notRender : Symbol(Test.notRender, Decl(jsxVue.tsx, 298, 7))
+>Test : Symbol(Test, Decl(jsxVue.tsx, 293, 54))
+>h : Symbol(h, Decl(jsxVue.tsx, 303, 25))
+>notRender : Symbol(Test.notRender, Decl(jsxVue.tsx, 298, 7))
+
+    expect(vnode.tag).to.equal('div');
+>expect(vnode.tag).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.tag).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 303, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+    expect(vnode.children[0].text).to.equal('test');
+>expect(vnode.children[0].text).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.children[0].text).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 303, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('should handle special attrs properties', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const vnode = render(h => (
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 309, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 309, 25))
+
+      <input value="value" />
+>value : Symbol(value, Decl(jsxVue.tsx, 310, 12))
+
+    ));
+    expect(vnode.data.attrs.value).to.equal('value');
+>expect(vnode.data.attrs.value).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.attrs.value).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 309, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+
+  it('should handle special domProps properties', () => {
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+
+    const vnode = render(h => (
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 316, 9))
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>h : Symbol(h, Decl(jsxVue.tsx, 316, 25))
+
+      <input value={'some jsx expression'} />
+>value : Symbol(value, Decl(jsxVue.tsx, 317, 12))
+
+    ));
+    expect(vnode.data.domProps.value).to.equal('some jsx expression');
+>expect(vnode.data.domProps.value).to.equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>expect(vnode.data.domProps.value).to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 316, 9))
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+
+  });
+});
+
+// helpers
+
+function render (render: any): any {
+>render : Symbol(render, Decl(jsxVue.tsx, 321, 3))
+>render : Symbol(render, Decl(jsxVue.tsx, 325, 17))
+
+  return undefined;
+>undefined : Symbol(undefined)
+}
+
+function createComponentInstanceForVnode (vnode: any): any {
+>createComponentInstanceForVnode : Symbol(createComponentInstanceForVnode, Decl(jsxVue.tsx, 327, 1))
+>vnode : Symbol(vnode, Decl(jsxVue.tsx, 329, 42))
+
+  return undefined;
+>undefined : Symbol(undefined)
+}
+
+function describe(key: string, callback: () => void) { }
+>describe : Symbol(describe, Decl(jsxVue.tsx, 331, 1))
+>key : Symbol(key, Decl(jsxVue.tsx, 333, 18))
+>callback : Symbol(callback, Decl(jsxVue.tsx, 333, 30))
+
+function it(name: string, callback: () => void) { }
+>it : Symbol(it, Decl(jsxVue.tsx, 333, 56))
+>name : Symbol(name, Decl(jsxVue.tsx, 334, 12))
+>callback : Symbol(callback, Decl(jsxVue.tsx, 334, 25))
+
+function expect(value: any) {
+>expect : Symbol(expect, Decl(jsxVue.tsx, 334, 51))
+>value : Symbol(value, Decl(jsxVue.tsx, 335, 16))
+
+  return {
+    to: {
+>to : Symbol(to, Decl(jsxVue.tsx, 336, 10))
+
+      equal: function(value: any) { },
+>equal : Symbol(equal, Decl(jsxVue.tsx, 337, 9))
+>value : Symbol(value, Decl(jsxVue.tsx, 338, 22))
+
+      deep: {
+>deep : Symbol(deep, Decl(jsxVue.tsx, 338, 38))
+
+        equal: function(value: any) { }
+>equal : Symbol(equal, Decl(jsxVue.tsx, 339, 13))
+>value : Symbol(value, Decl(jsxVue.tsx, 340, 24))
+
+      },
+      contain: function(value: any) { },
+>contain : Symbol(contain, Decl(jsxVue.tsx, 341, 8))
+>value : Symbol(value, Decl(jsxVue.tsx, 342, 24))
+
+      be: {
+>be : Symbol(be, Decl(jsxVue.tsx, 342, 40))
+
+        true: true,
+>true : Symbol(true, Decl(jsxVue.tsx, 343, 11))
+
+        false: false
+>false : Symbol(false, Decl(jsxVue.tsx, 344, 19))
+      }
+    }
+  };
+}
+;
+
