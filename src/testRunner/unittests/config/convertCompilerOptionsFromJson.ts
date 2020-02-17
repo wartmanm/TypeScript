@@ -156,7 +156,7 @@ namespace ts {
                         file: undefined,
                         start: 0,
                         length: 0,
-                        messageText: "Argument for '--jsx' option must be: 'preserve', 'react-native', 'react'.",
+                        messageText: "Argument for '--jsx' option must be: 'preserve', 'react-native', 'react', 'vue'.",
                         code: Diagnostics.Argument_for_0_option_must_be_Colon_1.code,
                         category: Diagnostics.Argument_for_0_option_must_be_Colon_1.category
                     }]
